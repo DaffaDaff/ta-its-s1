@@ -2,26 +2,63 @@
 
 \section{Latar Belakang}
 
-% Ubah paragraf-paragraf berikut sesuai dengan latar belakang dari tugas akhir
-Pesatnya perkembangan roket yang merupakan \lipsum[2]
+Penyu merupakan salah satu spesies yang dilindungi karena populasinya terancam punah di seluruh dunia. 
+Di Indonesia sendiri terdapat 6 dari 7 jenis penyu yang ada di seluruh dunia. 
+Penyu telah mengalami penurunan jumlah populasi secara signifikan dalam jangka waktu terakhir ini. 
+Di habitatnya, penyu-penyu yang baru menetas menghadapi berbagai ancaman kematian dari hewan-hewan seperti burung, kepiting, dan biawak. 
+Namun, ancaman terbesar yang mengakibatkan penurunan populasi yang signifikan adalah manusia. 
+Berbagai pembangunan di daerah pesisir yang berlebihan mengakibatkan pengurangan habitat penyu untuk bersarang. 
+Penangkapan dan pemburuan penyu untuk diambil telur, daging, kulit, dan cangkangnya membuat populasi penyu di seluruh dunia berkurang. 
+\parencite{JKT602}
 
-\lipsum[3]
+Beberapa kasus kematian penyu yang terjadi di Sulawesi Barat akibat penangkapan ilegal diantaranya pada tahun 2016 kasus kematian 2 ekor penyu di Pantai Palippis dan Pantai Lapeo yang ditemukan dalam keadaan penyu luka dibagian dubur yang menandakan telurnya telah dikeluarkan dari tubuhnya secara paksa. 
+Pada Tahun 2017, 3 ekor penyu ditemukan dalam keadaan tubuhnya tidak utuh di Pantai Mampie.  
+Kemudian pada Tahun 2019 kematian penyu berjumlah 18 ekor di Pantai Mampie, kebanyakan penyu yang ditemukan mati tersebut diduga dibunuh dengan sengaja untuk diambil telur dan dagingnya. 
+\parencite{nur2022pelatihan}
+
+Konservasi merupakan salah satu cara yang diharapkan dapat mencegah punahnya populasi penyu.
+Salah satu metode konservasi adalah dengan mempelajari perilaku dan pola hidup penyu dengan cara melacak penyu pada habitatnya.
+Dengan mempelajari perilaku dan pola hidup penyu, peneliti dan konservasionis dapat mengetahui bagaimana cara membantu dalam pelestarian penyu, 
+salah satunya adalah dengan cara membangun taman konservasi pada daerah tempat mereka bertelur serta mengawasi habitat kritikal dan jalur migrasi mereka. 
+Teknologi pelacakan yang telah diimplementasikan adalah menggunakan satellite tagging.
+Satellite tagging atau satellite tracking adalah metode pelacakan posisi penyu dengan memasang modul GPS dengan presisi tinggi.
+Satellite tagging memungkinkan peneliti dan konservasionis untuk melacak posisi dan perlakuan penyu pada habitatnya dan melacak jalur migrasinya.
+Penggunaan satellite tagging memerlukan pemasangan yang tepat untuk memastikan pemasang tidak menyakiti penyu.
+Penggunaan satellite tagging juga memerlukan modul GPS yang tidak murah untuk setiap penyu.
+Selain itu, penggunaan satellite tracking juga memiliki resiko malfungsi dan rusak.
+\parencite{10.3389/fmars.2018.00432}
+
+Oleh karena itu, penelitian ini ditujukan untuk mencari alternatif dalam mengidentifikasi dan melacak individu penyu pada habitatnya.
+Solusi yang ditawarkan pada penelitian ini adalah re-identifikasi (Re-ID) dengan menggunakan deep learning.
+Re-identifikasi adalah proses mengidentifikasi kembali suatu objek atau individu yang telah diidentifikasi sebelumnya dengan melihat fitur-fitur visual yang unik.
+Re-identifikasi dapat mengidentifikasi suatu individu dengan perbedaan sudut kamera dan pencahayaan.
+\parencite{zheng2016personreidentificationpastpresent}
+Penggunaan teknologi deep learning, seperti Vision Transformer (ViT) dapat mengekstrak fitur pada individu dengan efektif yang memungkinkan identifikasi individu pada berbagai sudut.
+ViT juga menawarkan performa dan akurasi yang lebih dibandingkan dengan model lain seperti CNN.
+\parencite{9716741}
+Dengan menggunakan fitur tersebut, penggunaan ViT dapat digunakan untuk mengidentifikasi pola unik yang ada pada kepala setiap individu penyu.
+
 
 \section{Rumusan Masalah}
 
-% Ubah paragraf berikut sesuai dengan rumusan masalah dari tugas akhir
-Berdasarkan hal yang telah dipaparkan di latar belakang, \lipsum[4]
+Berdasarkan latar belakang di atas didapatkan beberapa rumusan masalah.
+Pertama, bagaimana cara mengidentifikasi penyu secara non-invasif menggunakan deep learning.
+Kedua, bagaimana efektivitas penggunaan Vision Transformer dalam Re-identifikasi penyu.
 
-\section{Batasan Masalah atau Ruang Lingkup}
+\section{Batasan Masalah}
 
-\lipsum[6]
+Penelitian ini memiliki batasan masalah untuk menetapkan fokus penelitian. Batasan masalah meliputi:
+\begin{enumerate}
+    \item Penelitian ini berfokus pada pengembangan model Vision Transformer yang digunakan untuk re-identifikasi penyu hijau.
+    \item Dataset yang digunakan berasal dari dataset yang telah dikumpulkan oleh wildlifedatasets dan tersedia untuk pemakaian publik.
+    \item Dataset yang digunakan berisi citra kepala penyu hijau yang diambil dari berbagai sudut dan pencahayaan.
+\end{enumerate}
 
 \section{Tujuan}
 
-% Ubah paragraf berikut sesuai dengan tujuan penelitian dari tugas akhir
-Tujuan dari penelitian ini adalah \lipsum[7][1-14]
+Tujuan dari penelitian ini adalah untuk mengembangkan model Vision Transformer yang dapat melakukan re-identifikasi pada penyu hijau berdasarkan pola di kepala dengan akurasi yang memuaskan.
 
 \section{Manfaat}
 
-% Ubah paragraf berikut sesuai dengan tujuan penelitian dari tugas akhir
-Manfaat dari penelitian ini adalah \lipsum[8][1-14]
+Penelitian diharapkan memberikan manfaat berupa solusi pelacakan penyu secara non-invasif yang dapat digunakan untuk penelitian dan tindakan dalam konservasi penyu. 
+Selain itu, penelitian ini juga diharapkan dapat memberikan model identifikasi penyu yang akurat.
