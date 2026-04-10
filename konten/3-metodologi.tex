@@ -3,22 +3,41 @@
 % Ubah konten-konten berikut sesuai dengan isi dari metodologi
 
 \section{Metode yang digunakan}
+Metode yang digunakan pada penelitian ini adalah Vision Transformer yang termasuk dalam \textit{deep learning}.
+Dataset yang digunakan adalah citra pola sisik pada kepala penyu yang diperoleh dari berbagai macam sumber fotografi.
+Dataset ini kemudian akan dilatih dengan menggunakan Pytorch hingga menghasilkan model yang mampu melakukan Re-Identifikasi.
 
-\lipsum[11]
+\subsection{Pengumpulan Dataset}
+Pengumpulan dataset dilakukan dengan mencari dataset yang tersedia secara publik di internet. 
+Dataset yang dicari adalah citra kepala penyu yang menampilkan pola sisik pada kepalanya.
+Dataset dicari sebanyak mungkin dikarenakan sifat Vision Transformer yang membutuhkan banyak data untuk dapat bekerja secara efektif.
+Selain itu, dibutuhkan dataset dengan sudut kamera dan pencahayaan yang berbeda-beda agar model yang dihasilkan dapat bekerja pada situasi yang bereagam.
 
-% Contoh input gambar dengan format *.jpg
-\begin{figure} [H] \centering
-  % Nama dari file gambar yang diinputkan
-  \includegraphics[scale=0.45]{gambar/blueprint.jpg}
-  % Keterangan gambar yang diinputkan
-  \caption{\emph{Blueprint} roket yang akan diuji coba \parencite{SpaceXBlueprint}}
-  % Label referensi dari gambar yang diinputkan
-  \label{fig:Blueprint}
-\end{figure}
+\subsection{Pengolahan Dataset}
+Pengolahan dataset dilakukan dengan memproses dataset menjadi data dengan parameter yang diinginkan seperti resolusi yang sesuai.
+Pengolahan dataset dilakukan untuk menyiapkan gambar agar dapat digunakan secara optimal dalam pelatihan model.
+eknik augmentasi data juga diterapkan untuk meningkatkan keragaman data pelatihan, dengan cara melakukan rotasi, flipping, zooming, dan perubahan warna pada gambar. 
+Hal ini bertujuan untuk mencegah overfitting dan meningkatkan kemampuan model dalam mengenali berbagai variasi kondisi gambar.
+Dataset akan dibagi menjadi 80\% \textit{training} dan 20\% pengujian.
 
-% Contoh penggunaan referensi dari gambar yang diinputkan
-Pada \emph{blueprint} yang tertera di Gambar \ref{fig:Blueprint}. \lipsum[12]
+\subsection{Penyusunan Sistem}
+Model yang digunakan dalam penelitian ini adalah Vision Transformer (ViT), yang merupakan arsitektur deep learning terbaru yang dirancang khusus untuk pemrosesan gambar.
+Proses ini dilakukan dengan penyusun arsitektur model agar dapat bekerja dengan dataset yang digunakan dan menghasilkan akurasi sesuai yang diharapkan.
+Selain itu dapat dilakukan \textit{fine-tuning} model yang telah dilatih sebelumnya dengan dataset besar, seperti ImageNet, sebagai dasar.
+
+\subsection{Pelatihan Model}
+Pelatihan model dilakukan dengan menggunakan optimizer AdamW yang terkenal efisien dalam mengoptimalkan model berbasis transformer. 
+Learning rate diatur dengan menggunakan teknik scheduler, seperti cosine annealing, untuk menyesuaikan laju pembelajaran selama proses pelatihan.
+Fungsi loss yang digunakan adalah Cross-Entropy Loss untuk tugas klasifikasi, atau Triplet Loss untuk pembelajaran embedding, yang memungkinkan model untuk belajar perbedaan antara individu penyu.
+Pelatihan model dilakukan menggunakan GPU untuk mempercepat proses komputasi.
+
+\subsection{Evaluasi Model}
+Untuk mengevaluasi kinerja model, beberapa metrik digunakan, seperti akurasi klasifikasi yang mengukur sejauh mana model dapat mengenali identitas individu penyu. 
+Selain itu, mAP (mean Average Precision) digunakan untuk menilai kemampuan model dalam melakukan re-identifikasi penyu. 
+ROC curve dan AUC juga digunakan untuk mengevaluasi kinerja model dalam hal kemampuan deteksi dan klasifikasi. 
+Validasi model dilakukan menggunakan dataset yang berbeda untuk mengukur kemampuan generalisasi model terhadap data yang belum pernah dilihat sebelumnya, sehingga dapat dipastikan bahwa model tidak overfit terhadap data pelatihan.
 
 \section{Bahan dan peralatan yang digunakan}
-
-\lipsum[13]
+Bahan yang digunakan pada penelitian ini adalah dataset berupa citra kepala penyu yang tersedia secara publik.
+Beberapa diantaranya adalah SeaTurtleIDHeads, SeaTurtleID2022, dan SeaTurtleID.
+Sedangkan alat yang digunakan pada penelitian ini adalah laptop PC, dan beberapa perangkat lunak pendukung seperti Microsoft Visual Studio Code, Jupyter Notebook, Python, Pytorch, dan Torchvision.
