@@ -1,0 +1,70 @@
+
+\begin{spacing}{1.2}
+  \chapter{PENDAHULUAN}
+\end{spacing}
+
+
+\pagenumbering{arabic}
+\vspace{4ex}
+
+\section{Latar Belakang}
+Penyu merupakan salah satu spesies yang dilindungi karena populasinya terancam punah di seluruh dunia. 
+Indonesia sendiri menjadi habitat penting bagi penyu, karena terdapat enam dari tujuh spesies penyu dunia yang hidup di perairan Indonesia \cite{JKT602}. 
+Namun, dalam beberapa dekade terakhir, populasi penyu mengalami penurunan yang signifikan.
+
+Di alam liar, tukik (penyu yang baru menetas) menghadapi berbagai ancaman alami seperti predasi oleh burung, kepiting, dan biawak. 
+Meskipun demikian, ancaman terbesar terhadap kelangsungan hidup penyu berasal dari aktivitas manusia. 
+Pembangunan pesisir yang tidak terkendali menyebabkan berkurangnya habitat peneluran. 
+Selain itu, praktik perburuan ilegal untuk mengambil telur, daging, kulit, dan cangkang penyu turut mempercepat penurunan populasi secara global \cite{JKT602}.
+
+Beberapa kasus kematian penyu akibat aktivitas ilegal telah dilaporkan di Sulawesi Barat. 
+Pada tahun 2016 ditemukan dua ekor penyu mati di Pantai Palippis dan Pantai Lapeo dengan indikasi pengambilan telur secara paksa. 
+Pada tahun 2017, tiga ekor penyu ditemukan dalam kondisi tubuh tidak utuh di Pantai Mampie. 
+Selanjutnya pada tahun 2019, sebanyak 18 ekor penyu ditemukan mati di lokasi yang sama dan diduga dibunuh untuk diambil telur serta dagingnya \cite{nur2022pelatihan}. 
+Kasus-kasus tersebut menunjukkan urgensi upaya konservasi yang lebih efektif.
+
+Salah satu pendekatan konservasi yang penting adalah mempelajari perilaku dan pola migrasi penyu melalui pelacakan individu di habitat alaminya. 
+Teknologi yang umum digunakan saat ini adalah \textit{satellite tagging}, yaitu metode pelacakan posisi menggunakan modul GPS berpresisi tinggi yang dipasang pada tubuh penyu. 
+Teknologi ini memungkinkan peneliti memantau pergerakan, habitat, dan jalur migrasi penyu secara akurat. 
+Namun, metode ini memiliki beberapa keterbatasan, antara lain biaya perangkat yang tinggi, risiko kerusakan atau malfungsi perangkat, serta kebutuhan pemasangan yang tepat agar tidak membahayakan penyu \cite{10.3389/fmars.2018.00432}.
+
+Oleh karena itu, diperlukan metode alternatif yang lebih efisien dan non-invasif untuk mengidentifikasi serta melacak individu penyu. 
+Salah satu pendekatan yang menjanjikan adalah re-identifikasi (Re-ID) berbasis visi komputer. 
+Re-ID merupakan proses mengenali kembali individu yang sama pada citra yang berbeda dengan memanfaatkan karakteristik visual unik \cite{zheng2016personreidentificationpastpresent}. 
+Pendekatan ini memungkinkan identifikasi individu meskipun terdapat variasi sudut pandang, pencahayaan, dan kondisi lingkungan.
+
+Perkembangan teknologi \textit{deep learning}, khususnya \textit{Vision Transformer} (ViT), menunjukkan kemampuan yang sangat baik dalam mengekstraksi fitur visual yang kompleks. 
+Dibandingkan dengan arsitektur Convolutional Neural Network (CNN), ViT mampu menangkap hubungan global pada citra sehingga berpotensi menghasilkan performa identifikasi yang lebih tinggi \cite{9716741}. 
+Dengan memanfaatkan pola unik pada bagian kepala penyu, teknologi ini dapat digunakan untuk mengidentifikasi individu penyu secara otomatis dan non-invasif.
+
+\section{Rumusan Masalah}
+Berdasarkan latar belakang di atas, maka permasalahan yang dapat dirumuskan dalam penelitian ini adalah sebagai berikut:
+\begin{enumerate}
+      \item Bagaimana merancang metode identifikasi individu penyu yang bersifat non-invasif sebagai alternatif tagging?
+      \item Bagaimana memanfaatkan teknologi \textit{deep learning} untuk mengekstraksi fitur unik pada kepala penyu sehingga dapat digunakan untuk Re-ID individu?
+      \item Seberapa baik performa model Vision Transformer dalam tugas Re-ID individu penyu pada skenario individu baru yang tidak muncul saat pelatihan?
+\end{enumerate}
+
+\section{Tujuan}
+\begin{enumerate}
+      \item Mengembangkan model Re-ID penyu berbasis citra sebagai metode alternatif pelacakan individu penyu yang lebih efisien dan non-invasif.
+      \item Menerapkan model \textit{deep learning} berbasis Vision Transformer untuk mengekstraksi fitur visual unik pada kepala penyu.
+      \item Mengevaluasi performa model menggunakan metrik evaluasi Re-ID.
+\end{enumerate}
+
+\section{Batasan Masalah}
+Penelitian ini memiliki batasan masalah untuk menetapkan fokus penelitian. Batasan masalah meliputi:
+\begin{enumerate}
+    \item Penelitian ini berfokus pada pengembangan model Vision Transformer yang digunakan untuk Re-ID penyu.
+    \item Dataset yang digunakan untuk pelatihan hanya menggunakan citra kepala penyu sebagai data identifikasi individu.
+    \item Dataset yang digunakan berisi citra kepala penyu yang diambil dari berbagai sudut dan pencahayaan.
+    \item Penelitian tidak membahas aspek implementasi perangkat keras lapangan maupun integrasi sistem konservasi secara langsung.
+\end{enumerate}
+
+\section{Manfaat}
+Penelitian ini diharapkan dapat memberikan beberapa manfaat sebagai berikut:
+\begin{enumerate}
+      \item Berkontribusi penelitian di bidang computer vision untuk konservasi satwa liar.
+      \item Menjadi referensi bagi penelitian lanjutan terkait animal Re-ID berbasis Vision Transformer.
+      \item Menyediakan opsi untuk identifikasi penyu laut yang non-invasif.
+\end{enumerate}

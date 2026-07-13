@@ -1,0 +1,427 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{multirow}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Development of a Sea Turtle Re-Identification Model Using Vision Transformer}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Sulthan Daffa Arif Mahmudi}
+\IEEEauthorblockA{\textit{Computer Engineering} \\
+\textit{Sepuluh Nopember Institute of Technology}\\
+Surabaya, Indonesia \\
+5024211005@student.its.ac.id}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Reza Fuad Rachmadi, S.T., M.T., Ph.D}
+\IEEEauthorblockA{\textit{Computer Engineering} \\
+\textit{Sepuluh Nopember Institute of Technology}\\
+Surabaya, Indonesia \\
+fuad@its.ac.id}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Prof. Dr. I Ketut Eddy Purnama, S.T., M.T.}
+\IEEEauthorblockA{\textit{Computer Engineering} \\
+\textit{Sepuluh Nopember Institute of Technology}\\
+Surabaya, Indonesia \\
+ketut@its.ac.id}
+}
+
+\maketitle
+
+\begin{abstract}
+Sea turtles are protected animals whose populations continue to decline due to illegal hunting and habitat destruction. Conservation efforts require accurate individual identification systems to support population monitoring and migration pattern analysis. Conventional methods such as satellite tagging are costly, invasive, and prone to device failure. This paper presents a non-invasive sea turtle re-identification (Re-ID) system based on head images using the Vision Transformer (ViT) architecture pretrained with DINOv3 self-supervised learning. The model is trained on the SeaTurtleIDHeads dataset containing 7,582 images of 400 individual sea turtles. Training employs a combined ArcFace Loss and Online Hard Triplet Loss to enhance inter-identity separability in the embedding space. Additional techniques including Layer-wise Learning Rate Decay (LLRD), cosine learning rate scheduling, and test-time augmentation (TTA) are applied to improve performance. Evaluation under an open-set re-identification scenario yields a Rank-1 accuracy of 78.0\% and a mean Average Precision (mAP) of 84.6\% after k-reciprocal re-ranking. Extensive ablation studies across dataset, architecture, metric learning, training, and optimizer parameters provide practical guidelines for future wildlife Re-ID systems.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Sea turtle, re-identification, Vision Transformer, DINOv3
+\end{IEEEkeywords}
+
+% -------------------------------------------------------
+\section{Introduction}
+% -------------------------------------------------------
+ 
+Sea turtles represent one of the most ecologically significant yet threatened groups of marine reptiles. Indonesia alone hosts six of the world's seven sea turtle species~\cite{ario2016}. Over recent decades, populations have declined sharply due to coastal development that destroys nesting habitats, and illegal activities such as egg collection and poaching~\cite{ario2016}. Documented cases in West Sulawesi between 2016 and 2019 reported over 20 turtles killed for their eggs and meat~\cite{nur2022}.
+ 
+Effective conservation requires the ability to track individual turtles non-invasively over long periods to estimate population size, study migration patterns, and monitor reproductive behaviour. The conventional approach — satellite tagging — attaches a GPS transmitter to the animal. While accurate, this method suffers from high hardware costs, risk of device malfunction, and the stress imposed on the animal during attachment~\cite{hays2018}.
+ 
+Computer vision-based re-identification (Re-ID) offers a compelling non-invasive alternative. Re-ID systems recognise a previously observed individual from new images by exploiting unique visual characteristics~\cite{zheng2016}. For sea turtles, the scale (scute) patterns on the head are known to remain stable throughout an individual's lifetime~\cite{carpentier2016}, functioning as a natural biometric.
+ 
+Recent advances in deep learning, particularly the Vision Transformer (ViT)~\cite{dosovitskiy2021}, have demonstrated superior capability in extracting global visual features compared to Convolutional Neural Networks (CNNs). Combined with powerful self-supervised pretraining such as DINOv3~\cite{simeoni2025}, ViT backbones can generate rich, transferable representations that are well-suited to fine-grained Re-ID tasks.
+ 
+% This paper makes the following contributions:
+% \begin{itemize}
+%   \item A complete sea turtle Re-ID pipeline built on a DINOv3-pretrained ViT backbone, trained with a combined ArcFace and Online Hard Triplet Loss under an open-set protocol.
+%   \item Application of Layer-wise Learning Rate Decay, cosine scheduling, and test-time aggregated embeddings to improve generalisation to unseen identities.
+%   \item Comprehensive ablation studies covering 19 parameters across five categories, yielding practical configuration guidelines.
+% \end{itemize}
+
+% -------------------------------------------------------
+\section{Related Work}
+% -------------------------------------------------------
+ 
+\subsection{Sea Turtle Individual Identification}
+ 
+Early automated systems used neural network ensembles on facial scute images of green turtles~\cite{carter2014}. Carpentier et al.~\cite{carpentier2016} validated the long-term stability of facial scute patterns over 11 years, confirming their suitability as persistent biometric markers. Alternative body regions such as front-flipper scales have also been explored~\cite{gatto2018,dunbar2023}, with some showing higher accuracy under specific conditions.
+ 
+Adam et al.~\cite{adam2023} introduced SeaTurtleID2022, a 13-year longitudinal dataset of 438 loggerhead turtles, and proposed a baseline system integrating Hybrid Task Cascade segmentation with ArcFace feature extraction, achieving 86.8\% Rank-1. Nguyen et al.~\cite{nguyen2023} evaluated AlexNet, GoogLeNet, VGG-19, and ResNet-50 on facial scute images, with ResNet-50 reaching 95.3\% accuracy on a mixed dataset.
+ 
+Čermák et al.~\cite{cermak2024} introduced WildlifeDatasets and MegaDescriptor, the first multi-species Re-ID foundation model, which substantially outperforms general pretrained models including CLIP and DINOv2 across wildlife datasets. Papafitsoros et al.~\cite{papafitsoros2025} further improved Re-ID accuracy by exploiting left-right facial profile similarities within the same individual.
+ 
+\subsection{Vision Transformer for Re-ID}
+ 
+ViT~\cite{dosovitskiy2021} applies the Transformer architecture directly to sequences of image patches. Its self-attention mechanism captures global spatial relationships in a single layer, a key advantage over CNN receptive fields. Pretrained ViT models have been applied successfully to person Re-ID~\cite{han2023}. DINOv2~\cite{oquab2024} and its successor DINOv3~\cite{simeoni2025} provide self-supervised ViT features that transfer strongly to downstream recognition tasks without requiring labelled data.
+% -------------------------------------------------------
+\section{Methodology}
+% -------------------------------------------------------
+ 
+\subsection{Dataset}
+ 
+The SeaTurtleIDHeads dataset~\cite{wildlifedatasets2023} contains 7,582 images from 400 individual sea turtles collected over more than a decade. Images are cropped to the head region and exhibit rich variation in pose, lighting, camera angle, distance, and resolution — closely reflecting real field conditions.
+ 
+The dataset was split into training (70\%), validation (20\%), and test (10\%) partitions using an open-set identity split: no individual appears in more than one partition. Identities with fewer than $N_G + 2$ images were excluded to guarantee at least $N_G$ gallery images and two query images per identity. Within each evaluation partition, $N_G = 3$ images per identity were randomly allocated to the gallery set; the remainder formed the query set.
+ 
+\subsection{Image Preprocessing and Augmentation}
+ 
+All images are resized to $256 \times 256$ pixels. During training, the following augmentations are applied sequentially:
+\begin{itemize}
+  \item \textbf{Random Crop}: Resize to $288 \times 288$, then randomly crop to $256 \times 256$.
+  \item \textbf{Random Horizontal Flip}: $p = 0.5$.
+  \item \textbf{Colour Jitter}: Random perturbations to brightness, contrast, saturation, and hue.
+  \item \textbf{Random Grayscale}: $p = 0.1$.
+  \item \textbf{Random Rotation}: Up to $20^\circ$.
+  \item \textbf{Gaussian Blur}: Kernel $5 \times 5$, $\sigma \in [0.1, 2.0]$.
+  \item \textbf{Random Erasing}: $p = 0.3$, simulating partial occlusion.
+\end{itemize}
+At evaluation, only resize and normalisation are applied. All pixel values are normalised with ImageNet statistics ($\mu = [0.485, 0.456, 0.406]$, $\sigma = [0.229, 0.224, 0.225]$).
+ 
+\subsection{Model Architecture}
+ 
+\subsubsection{Backbone}
+The backbone is ViT-B/16 pretrained with DINOv3~\cite{simeoni2025}, loaded via the PyTorch Image Models (timm) library. The image is divided into $16 \times 16$ patches; for $256 \times 256$ input this yields 256 patch tokens. After 12 Transformer blocks, the [CLS] token output (dimension 768) serves as the global image representation.
+ 
+\subsubsection{Embedding Head}
+The 768-dimensional backbone output is passed through a lightweight head:
+\begin{enumerate}
+  \item Layer Normalisation.
+  \item Dropout ($p_{\text{drop}} = 0.1$).
+  \item Linear projection ($768 \to d_e = 256$, no bias).
+\end{enumerate}
+The output is $\ell_2$-normalised, placing all embeddings on the unit hypersphere.
+ 
+\subsection{Loss Functions}
+ 
+\subsubsection{ArcFace Loss}
+ArcFace~\cite{deng2019} adds an angular margin $m_a$ to the angle between the embedding and the correct class prototype before computing softmax cross-entropy:
+ 
+\begin{equation}
+\mathcal{L}_{\text{ArcFace}} = -\frac{1}{N}\sum_{i=1}^{N}
+\log \frac{e^{s_a \cos(\theta_{y_i} + m_a)}}
+{e^{s_a \cos(\theta_{y_i} + m_a)} + \sum_{j \neq y_i} e^{s_a \cos\theta_j}}
+\label{eq:arcface}
+\end{equation}
+ 
+with scale $s_a = 64.0$ and margin $m_a = 0.5$.
+ 
+\subsubsection{Online Hard Triplet Loss}
+Following Hermans et al.~\cite{hermans2017}, Online Hard Triplet Loss mines the hardest positive and hardest negative within each batch:
+ 
+\begin{equation}
+\mathcal{L}_{\text{Triplet}} = \frac{1}{N}\sum_{i=1}^{N}
+\max\!\bigl(d(a_i, p_i) - d(a_i, n_i) + m_t,\; 0\bigr)
+\label{eq:triplet}
+\end{equation}
+ 
+where $d(\cdot,\cdot)$ is the Euclidean distance and $m_t = 0.3$ is the margin.
+ 
+\subsubsection{Combined Loss}
+The total training objective is:
+\begin{equation}
+\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{ArcFace}} + \lambda_t \cdot \mathcal{L}_{\text{Triplet}},
+\quad \lambda_t = 0.5
+\label{eq:total}
+\end{equation}
+ 
+\subsection{Training Configuration}
+ 
+\subsubsection{Balanced Batch Sampling}
+Each batch contains $P = 16$ identities with $K = 4$ images each (batch size 64), sampled with replacement to guarantee valid positive pairs for Triplet Loss.
+ 
+\subsubsection{Optimiser}
+AdamW~\cite{loshchilov2019} is used with weight decay $\lambda_w = 10^{-4}$. Layer-wise Learning Rate Decay (LLRD)~\cite{sun2019} assigns a different learning rate to each Transformer block $i$ of $L = 12$:
+\begin{equation}
+\eta_i = \eta_{\text{bb}} \cdot \gamma^{L - i}, \quad \gamma = 0.75
+\label{eq:llrd}
+\end{equation}
+The backbone base LR is $\eta_{\text{bb}} = 10^{-5}$; the embedding head and ArcFace classifier use $\eta_{\text{base}} = 10^{-3}$.
+ 
+\subsubsection{Learning Rate Schedule}
+A linear warmup of $W = 5$ epochs is followed by cosine decay over $E = 50$ epochs total:
+\begin{equation}
+\eta(e) = \begin{cases}
+\eta_{\max} \cdot \dfrac{e+1}{W} & e < W \\[6pt]
+\dfrac{\eta_{\max}}{2}\!\left(1 + \cos\!\left(\pi \cdot \dfrac{e - W}{E - W}\right)\right) & e \geq W
+\end{cases}
+\label{eq:schedule}
+\end{equation}
+ 
+Additional training settings: gradient clipping at $G_{\max} = 1.0$, early stopping with patience 10 validation intervals (each 5 epochs), and automatic mixed precision (AMP).
+ 
+\subsection{Inference and Evaluation}
+ 
+\subsubsection{Aggregated TTA Embedding}
+At inference, each image is processed with six TTA transformations (standard resize, centre crop, horizontal flip, larger centre crop, brightness jitter, light rotation + crop). The resulting embeddings are averaged and $\ell_2$-normalised. For gallery identities, TTA-aggregated vectors from all reference images of the same identity are further averaged and re-normalised into a single gallery vector~\cite{zhong2017}.
+ 
+\subsubsection{K-Reciprocal Re-Ranking}
+Initial cosine similarity rankings are refined with k-reciprocal re-ranking~\cite{zhong2017}:
+\begin{equation}
+D_{\text{final}}(q, g) = \lambda_{rr} \cdot D_{\text{cosine}}(q, g) + (1 - \lambda_{rr}) \cdot D_{\text{Jaccard}}(q, g)
+\label{eq:rerank}
+\end{equation}
+with $k_1 = 20$, $k_2 = 6$, and $\lambda_{rr} = 0.3$.
+ 
+\subsubsection{Evaluation Metrics}
+Performance is reported as Rank-1/5/10 (Cumulative Matching Characteristic) and mean Average Precision (mAP)~\cite{zheng2015}, evaluated on the 10\% held-out test identities unseen during training.
+
+% -------------------------------------------------------
+\section{Experiments}
+% -------------------------------------------------------
+ 
+\subsection{Experimental Setup}
+ 
+All experiments were run on a single NVIDIA GeForce RTX 4090 (24 GB), Intel Core i9-13900KF, 64 GB RAM, Windows 11, Python 3.10, PyTorch 2.11.0, and timm 1.0.25. A fixed random seed (42) ensures reproducibility.
+ 
+\subsection{Baseline Results}
+ 
+Table~\ref{tab:baseline} reports baseline results under both cosine similarity and k-reciprocal re-ranking.
+ 
+\begin{table}[htbp]
+\caption{Baseline Evaluation on SeaTurtleIDHeads Test Set}
+\label{tab:baseline}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Cosine} & \textbf{+Re-rank} \\
+\midrule
+Rank-1 (\%) & 77.4 & 78.0 \\
+Rank-5 (\%) & 91.5 & 91.3 \\
+Rank-10 (\%) & 95.9 & 95.3 \\
+mAP (\%)    & 83.6 & 84.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+ 
+Re-ranking provides a consistent improvement on Rank-1 (+0.6 pp) and mAP (+1.0 pp) at the cost of a marginal decrease in Rank-5 and Rank-10, suggesting that the k-reciprocal neighbourhood structure successfully captures additional identity cues beyond pairwise cosine distance.
+ 
+\subsection{Ablation Studies}
+ 
+All ablation experiments follow a one-factor-at-a-time (OFAT) protocol; results are reported with re-ranking.
+ 
+\subsubsection{Dataset Parameters}
+Table~\ref{tab:dataset} shows the effect of image resolution and gallery size.
+ 
+\begin{table}[htbp]
+\caption{Effect of Dataset Parameters (+Re-rank)}
+\label{tab:dataset}
+\centering
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Param} & \textbf{Value} & \textbf{R@1} & \textbf{R@5} & \textbf{R@10} & \textbf{mAP} \\
+\midrule
+\multirow{3}{*}{$\text{img\_size}$}
+  & 224 & 73.3 & 91.5 & 94.9 & 81.9 \\
+  & \textbf{256} & \textbf{78.0} & 91.3 & 95.3 & \textbf{84.6} \\
+  & 320 & 79.1 & \textbf{92.5} & \textbf{96.0} & 84.9 \\
+\midrule
+\multirow{3}{*}{$N_G$}
+  & 1   & 58.2 & 83.9 & 92.8 & 69.3 \\
+  & \textbf{3}   & \textbf{78.0} & \textbf{91.3} & \textbf{95.3} & \textbf{84.6} \\
+  & 5   & 69.5 & 90.4 & 93.6 & 78.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+ 
+Higher resolution consistently improves performance. The resolution of 320 slightly outperforms 256 but at greater computational cost. For gallery size, $N_G = 3$ outperforms $N_G = 5$ despite providing fewer reference images per identity; this is because the minimum-image filter excludes more training identities at $N_G = 5$, reducing the diversity available during training.
+ 
+\subsubsection{Architecture Parameters}
+Table~\ref{tab:arch} shows the effect of embedding dimension and dropout.
+ 
+\begin{table}[htbp]
+\caption{Effect of Architecture Parameters (+Re-rank)}
+\label{tab:arch}
+\centering
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Param} & \textbf{Value} & \textbf{R@1} & \textbf{R@5} & \textbf{R@10} & \textbf{mAP} \\
+\midrule
+\multirow{3}{*}{$d_e$}
+  & 128 & 76.5 & 92.1 & 95.3 & 84.0 \\
+  & \textbf{256} & \textbf{78.0} & 91.3 & \textbf{95.3} & \textbf{84.6} \\
+  & 512 & 76.6 & \textbf{92.1} & 94.7 & 83.9 \\
+\midrule
+\multirow{3}{*}{$p_{\text{drop}}$}
+  & \textbf{0.0} & \textbf{81.0} & \textbf{91.7} & 94.9 & \textbf{86.0} \\
+  & 0.1 & 78.0 & 91.3 & \textbf{95.3} & 84.6 \\
+  & 0.3 & 73.1 & 90.8 & 95.1 & 81.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+ 
+An embedding dimension of 256 achieves the best Rank-1 and mAP. The higher-dimensional 512 space shows signs of overfitting. Removing dropout ($p_{\text{drop}} = 0.0$) improves Rank-1 to 81.0\%, indicating that the strong DINOv3 pretraining and other regularisation techniques (LLRD, weight decay, augmentation) are sufficient to prevent overfitting.
+ 
+\subsubsection{Metric Learning Parameters}
+Table~\ref{tab:batch} reports the effect of batch composition.
+ 
+\begin{table}[htbp]
+\caption{Effect of Batch Composition (+Re-rank)}
+\label{tab:batch}
+\centering
+\begin{tabular}{ccccc}
+\toprule
+$P$ & $K$ & \textbf{R@1} & \textbf{R@5} & \textbf{mAP} \\
+\midrule
+16 & 2 & \textbf{79.1} & \textbf{95.3} & \textbf{86.3} \\
+\textbf{16} & \textbf{4} & 78.0 & 91.3 & 84.6 \\
+16 & 8 & 71.9 & 88.9 & 80.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+ 
+Reducing images per identity to $K = 2$ while keeping the same number of identities ($P = 16$) improves performance, suggesting that broader identity coverage within a batch is more beneficial than deeper intra-identity sampling.
+ 
+\subsection{Comparison Summary}
+ 
+Table~\ref{tab:comparison} places the proposed method in context with prior work on related sea turtle Re-ID benchmarks.
+ 
+\begin{table}[htbp]
+\caption{Comparison with Prior Work}
+\label{tab:comparison}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{Dataset} & \textbf{R@1 (\%)} & \textbf{mAP (\%)} \\
+\midrule
+Adam et al.~\cite{adam2023} (baseline) & SeaTurtleID2022 & 86.8 & — \\
+ResNet-50~\cite{nguyen2023} & Facial scutes & 95.3 & — \\
+MegaDescriptor~\cite{cermak2024} & Multi-species & — & — \\
+\textbf{Proposed (ViT-B/16 DINOv3)} & SeaTurtleIDHeads & \textbf{78.0} & \textbf{84.6} \\
+\bottomrule
+\end{tabular}
+\vspace{1pt}
+{\footnotesize Note: Direct comparison is not fully applicable due to different datasets and evaluation protocols.}
+\end{table}
+
+\section*{References}
+
+Please number citations consecutively within brackets \cite{b1}. The 
+sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
+number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
+the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+
+Number footnotes separately in superscripts. Place the actual footnote at 
+the bottom of the column in which it was cited. Do not put footnotes in the 
+abstract or reference list. Use letters for table footnotes.
+
+Unless there are six authors or more give all authors' names; do not use 
+``et al.''. Papers that have not been published, even if they have been 
+submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
+that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
+Capitalize only the first word in a paper title, except for proper nouns and 
+element symbols.
+
+For papers published in translation journals, please give the English 
+citation first, followed by the original foreign-language citation \cite{b6}.
+
+\begin{thebibliography}{00}
+ 
+\bibitem{ario2016}
+R. Ario, E. Wibowo, I. Pratikto, and S. Fajar, ``Pelestarian habitat penyu dari ancaman kepunahan di Turtle Conservation and Education Center (TCEC), Bali,'' \textit{Jurnal Kelautan Tropis}, vol. 19, no. 1, 2016.
+ 
+\bibitem{nur2022}
+M. Nur, T. Tenriware, D. Lestari, C. R. Mahfud, and T. Tikawati, ``Pelatihan konservasi penyu sebagai biota perairan yang dilindungi di Pantai Barane, Kabupaten Majene, Provinsi Sulawesi Barat,'' \textit{SELAPARANG: Jurnal Pengabdian Masyarakat Berkemajuan}, vol. 6, no. 4, pp. 1741--1746, 2022.
+ 
+\bibitem{hays2018}
+G. C. Hays and L. A. Hawkes, ``Satellite tracking sea turtles: Opportunities and challenges to address key questions,'' \textit{Frontiers in Marine Science}, vol. 5, 2018.
+ 
+\bibitem{zheng2016}
+L. Zheng, Y. Yang, and A. G. Hauptmann, ``Person re-identification: Past, present and future,'' \textit{arXiv preprint arXiv:1610.02984}, 2016.
+ 
+\bibitem{carpentier2016}
+A.-S. Carpentier, C. Jean, M. Barret, A. Chassagneux, and S. Ciccione, ``Stability of facial scale patterns on green sea turtles \textit{Chelonia mydas} over time: A validation for the use of a photo-identification method,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 476, pp. 15--21, 2016.
+ 
+\bibitem{carter2014}
+S. J. B. Carter, I. P. Bell, J. J. Miller, and P. P. Gash, ``Automated marine turtle photograph identification using artificial neural networks, with application to green turtles,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 452, pp. 105--110, 2014.
+ 
+\bibitem{gatto2018}
+C. R. Gatto, A. Rotger, N. J. Robinson, and P. S. Tomillo, ``A novel method for photo-identification of sea turtles using scale patterns on the front flippers,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 504, pp. 108--114, 2018.
+ 
+\bibitem{dunbar2023}
+S. G. Dunbar et al., ``Photo identification for sea turtles: Flipper scales more accurate than head scales using APHIS,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 566, p. 151923, 2023.
+ 
+\bibitem{adam2023}
+L. Adam, K. Papafitsoros, J. Pusman, and V. Čermák, ``SeaTurtleID2022: A long-span dataset for reliable sea turtle re-identification,'' \textit{arXiv preprint arXiv:2211.10307}, 2023.
+ 
+\bibitem{nguyen2023}
+T. T. T. Nguyen et al., ``Comparison of convolutional neural network architectures for sea turtle individual's recognition,'' in \textit{Proc. Int. Conf. Frontiers of Artificial Intelligence and Machine Learning (FAIM)}, 2023.
+ 
+\bibitem{cermak2024}
+V. Čermák, L. Picek, L. Adam, and K. Papafitsoros, ``WildlifeDatasets: An open-source toolkit for animal re-identification,'' in \textit{Proc. IEEE/CVF Winter Conf. Applications of Computer Vision (WACV)}, pp. 5953--5963, 2024.
+ 
+\bibitem{papafitsoros2025}
+K. Papafitsoros et al., ``Exploiting facial side similarities to improve AI-driven sea turtle photo-identification systems,'' \textit{Ecological Informatics}, 2025.
+ 
+\bibitem{dosovitskiy2021}
+A. Dosovitskiy et al., ``An image is worth 16x16 words: Transformers for image recognition at scale,'' in \textit{Proc. Int. Conf. Learning Representations (ICLR)}, 2021.
+ 
+\bibitem{simeoni2025}
+O. Siméoni et al., ``DINOv3,'' \textit{arXiv preprint arXiv:2508.10104}, 2025.
+ 
+\bibitem{oquab2024}
+M. Oquab et al., ``DINOv2: Learning robust visual features without supervision,'' \textit{Transactions on Machine Learning Research}, 2024.
+ 
+\bibitem{caron2021}
+M. Caron et al., ``Emerging properties in self-supervised vision transformers,'' in \textit{Proc. IEEE/CVF Int. Conf. Computer Vision (ICCV)}, 2021.
+ 
+\bibitem{deng2019}
+J. Deng, J. Guo, N. Xue, and S. Zafeiriou, ``ArcFace: Additive angular margin loss for deep face recognition,'' in \textit{Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)}, pp. 4690--4699, 2019.
+ 
+\bibitem{hermans2017}
+A. Hermans, L. Beyer, and B. Leibe, ``In defense of the triplet loss for person re-identification,'' \textit{arXiv preprint arXiv:1703.07737}, 2017.
+ 
+\bibitem{schroff2015}
+F. Schroff, D. Kalenichenko, and J. Philbin, ``FaceNet: A unified embedding for face recognition and clustering,'' in \textit{Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)}, pp. 815--823, 2015.
+ 
+\bibitem{zhong2017}
+Z. Zhong, L. Zheng, D. Cao, and S. Li, ``Re-ranking person re-identification with k-reciprocal encoding,'' in \textit{Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)}, pp. 3652--3661, 2017.
+ 
+\bibitem{zheng2015}
+L. Zheng et al., ``Scalable person re-identification: A benchmark,'' in \textit{Proc. IEEE/CVF Int. Conf. Computer Vision (ICCV)}, pp. 1116--1124, 2015.
+ 
+\bibitem{loshchilov2019}
+I. Loshchilov and F. Hutter, ``Decoupled weight decay regularization,'' in \textit{Proc. Int. Conf. Learning Representations (ICLR)}, 2019.
+ 
+\bibitem{sun2019}
+C. Sun, X. Qiu, Y. Xu, and X. Huang, ``How to fine-tune BERT for text classification?'' in \textit{Proc. Chinese Computational Linguistics (CCL)}, pp. 194--206, 2019.
+ 
+\bibitem{loshchilov2017}
+I. Loshchilov and F. Hutter, ``SGDR: Stochastic gradient descent with warm restarts,'' in \textit{Proc. Int. Conf. Learning Representations (ICLR)}, 2017.
+ 
+\bibitem{han2023}
+K. Han et al., ``A survey on vision transformer,'' \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}, vol. 45, no. 1, pp. 87--110, 2023.
+ 
+\bibitem{wildlifedatasets2023}
+WildlifeDatasets, ``SeaTurtleIDHeads,'' Kaggle, 2023. [Online]. Available: \url{https://www.kaggle.com/datasets/wildlifedatasets/seaturtleidheads}
+ 
+\end{thebibliography}
+\end{document}

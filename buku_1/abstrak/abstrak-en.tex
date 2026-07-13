@@ -1,0 +1,33 @@
+\begin{center}
+  \large\textbf{ABSTRACT}
+\end{center}
+
+\addcontentsline{toc}{chapter}{ABSTRACT}
+
+\vspace{2ex}
+
+\begingroup
+% Menghilangkan padding
+\setlength{\tabcolsep}{0pt}
+
+\noindent
+\begin{tabularx}{\textwidth}{l >{\centering}m{3em} X}
+  \emph{Name}     & : & \name{}         \\
+
+  \emph{Title}    & : & \engtatitle{}   \\
+
+  \emph{Advisors} & : & 1. \advisor{}   \\
+                  &   & 2. \coadvisor{} \\
+\end{tabularx}
+\endgroup
+
+% Ubah paragraf berikut dengan abstrak dari tugas akhir dalam Bahasa Inggris
+\emph{
+Sea turtles are protected animals because their populations continue to decline due to human activities such as illegal hunting and habitat destruction. Conservation efforts require an accurate individual identification system to support population monitoring and migration pattern analysis. Conventional methods such as satellite tagging have several limitations, including high costs, risk of device damage, and invasive effects on the animals. Therefore, this study develops a sea turtle re-identification (Re-ID) model based on head images using the Vision Transformer (ViT) architecture as a more efficient and non-invasive alternative.
+}
+\emph{
+This research uses the SeaTurtleIDHeads dataset, which contains sea turtle head images from various individuals and imaging conditions. The model is built using a Vision Transformer backbone pretrained with DINOv3 and equipped with an embedding head to generate visual feature representations. The training process applies a combination of ArcFace Loss and Online Hard Triplet Loss to improve separability between identities. In addition, Layer-wise Learning Rate Decay (LLRD), a cosine learning rate scheduler, and test-time augmentation are employed to enhance model performance. Evaluation is conducted using Rank-1 and mean Average Precision (mAP) metrics under an open-set re-identification scenario.
+}
+
+% Ubah kata-kata berikut dengan kata kunci dari tugas akhir dalam Bahasa Inggris
+\emph{Keywords}: Keywords: Sea Turtles, Re-identification, Vision Transformer
