@@ -2,13 +2,13 @@
 \label{sec:chap4_pengujian}
 \vspace{1ex}
 
-Bab ini menjelaskan prosedur pengujian yang dilakukan, rancangan eksperimen variasi parameter, serta cara interpretasi hasil evaluasi. Pengujian dirancang untuk menjawab dua pertanyaan utama: (1) seberapa baik performa sistem re-identifikasi penyu laut yang dibangun pada konfigurasi acuan, dan (2) bagaimana setiap parameter memengaruhi performa tersebut.
+Bab ini menjelaskan prosedur pengujian yang dilakukan, rancangan eksperimen variasi parameter, serta cara interpretasi hasil evaluasi. Pengujian dirancang untuk menjawab dua pertanyaan utama: (1) seberapa baik performa sistem re-identifikasi penyu laut yang dibangun pada konfigurasi acuan, dan (2) bagaimana setiap parameter mempengaruhi performa tersebut.
 
 \section{Lingkungan Pengujian}
 \subsection{Perangkat Keras dan Perangkat Lunak}
-
-Seluruh eksperimen dijalankan pada lingkungan dengan spesifikasi sebagai berikut.
-
+ 
+Seluruh eksperimen dijalankan pada lingkungan dengan spesifikasi sebagai berikut:
+ 
 \begin{table}[ht]
 \centering
 \caption{Spesifikasi lingkungan pengujian}
@@ -28,13 +28,13 @@ timm              & \textit{timm 1.0.25} \\
 \hline
 \end{tabular}
 \end{table}
-
-Untuk menjamin reproduktibilitas hasil, seluruh eksperimen menggunakan \textit{random seed} yang tetap ($\texttt{SEED} = 42$) pada semua pustaka yang relevan, yaitu \texttt{random}, \texttt{numpy}, dan \texttt{torch}.
+ 
+Untuk menjamin reproduktifitas, seluruh eksperimen menggunakan \textit{random seed} yang tetap ($\texttt{SEED} = 42$) pada semua pustaka yang relevan (\texttt{random}, \texttt{numpy}, dan \texttt{torch}).
 
 \section{Rancangan Eksperimen}
 \subsection{Konfigurasi Acuan}
-Sebelum melakukan variasi parameter, ditetapkan terlebih dahulu satu konfigurasi \textit{default} yang menjadi acuan bagi seluruh eksperimen. Konfigurasi ini dipilih berdasarkan nilai-nilai yang umum digunakan dalam literatur re-identifikasi berbasis ViT dan telah disesuaikan dengan skala dataset SeaTurtleIDHeads. Seluruh parameter pada Tabel~\ref{tab:default} merupakan nilai \textit{default} yang digunakan pada setiap eksperimen, kecuali dinyatakan lain.
-
+Sebelum melakukan variasi parameter, ditetapkan satu konfigurasi acuan atau konfigurasi \textit{default} yang menjadi acuan seluruh eksperimen. Konfigurasi acuan ini dipilih berdasarkan nilai-nilai yang umum digunakan dalam literatur re-identifikasi berbasis ViT dan disesuaikan dengan skala dataset SeaTurtleIDHeads. Seluruh parameter pada Tabel~\ref{tab:default} merupakan nilai \textit{default} yang digunakan kecuali dinyatakan lain pada setiap eksperimen variasi.
+ 
 \begin{table}[ht]
 \centering
 \caption{Konfigurasi acuan}
@@ -72,9 +72,9 @@ Optimizer     & Weight decay              & $\lambda_w$                  & $10^{
 \end{table}
 
 \subsection{Protokol Evaluasi}
-
-Setiap konfigurasi dievaluasi secara konsisten dengan mengikuti protokol berikut.
-
+ 
+Setiap konfigurasi dievaluasi secara konsisten menggunakan protokol berikut:
+ 
 % \begin{enumerate}
 %     \item Model dilatih menggunakan data pelatihan SeaTurtleIDHeads. \textit{Checkpoint} terbaik dipilih berdasarkan nilai \textit{Rank-1} tertinggi pada data validasi.
 %     \item Model terbaik dievaluasi pada empat dataset pengujian secara berurutan:
@@ -89,14 +89,14 @@ Setiap konfigurasi dievaluasi secara konsisten dengan mengikuti protokol berikut
 
 \begin{enumerate}
     \item Model dilatih menggunakan data pelatihan SeaTurtleIDHeads. \textit{Checkpoint} terbaik dipilih berdasarkan nilai \textit{Rank-1} tertinggi pada data validasi.
-    \item Model terbaik dievaluasi menggunakan dataset SeaTurtleIDHeads, dengan cakupan 10\% identitas terakhir yang tidak pernah dilihat model selama pelatihan.
-    \item Performa dihitung menggunakan metrik \textit{Rank-1}, \textit{Rank-5}, \textit{Rank-10}, dan mAP, dengan dua metode: \textit{cosine similarity} murni dan \textit{k-reciprocal re-ranking} ($k_1=20$, $k_2=6$, $\lambda_{\text{rr}}=0{.}3$).
+    \item Model terbaik dievaluasi menggunakan dataset SeaTurtleIDHeads dengan cakupan 10\% identitas terakhir yang tidak pernah dilihat model selama pelatihan
+    \item Performa dihitung metrik \textit{Rank-1}, \textit{Rank-5}, \textit{Rank-10}, dan mAP menggunakan dua metode: \textit{cosine similarity} murni, dan \textit{k-reciprocal re-ranking} ($k_1=20$, $k_2=6$, $\lambda_{\text{rr}}=0{.}3$).
 \end{enumerate}
-
+ 
 \subsection{Variabel Parameter yang Diuji}
-
-Penelitian ini menguji 15 parameter secara individual menggunakan pendekatan \textit{one-factor-at-a-time} (OFAT), yaitu satu parameter divariasikan sementara seluruh parameter lainnya dipertahankan pada nilai acuan. Pendekatan ini memungkinkan analisis kontribusi bersih dari setiap parameter terhadap performa sistem.
-
+ 
+Penelitian ini menguji 15 parameter secara individual menggunakan pendekatan \textit{one-factor-at-a-time} (OFAT): satu parameter divariasikan sambil mempertahankan seluruh parameter lainnya pada nilai acuan. Pendekatan ini memungkinkan analisis kontribusi bersih dari setiap parameter terhadap performa sistem.
+ 
 \begin{table}[H]
 \centering
 \caption{Variabel parameter yang diuji}
@@ -138,97 +138,31 @@ Penelitian ini menguji 15 parameter secara individual menggunakan pendekatan \te
 \end{tabular}
 \end{table}
 
-\subsection{Interpretasi Parameter dan Hubungannya dengan Performa}
-
-Bagian ini merangkum makna teknis setiap parameter yang diuji beserta hubungannya dengan performa sistem, berdasarkan hasil pengujian OFAT pada Subbab 4.4.
-
-\subsubsection{Parameter Dataset}
-
-\begin{description}
-    \item[$\mathit{img\_size}$ (ukuran citra)] Resolusi piksel citra input yang diberikan ke backbone ViT. Semakin besar resolusi, semakin banyak detail visual (pola sisik/kepala penyu) yang dapat ditangkap model. Semakin tinggi resolusi (224$\rightarrow$320), performa semakin meningkat (Rank-1 73{,}3\%$\rightarrow$79{,}1\%), tetapi disertai trade-off berupa kebutuhan komputasi yang lebih besar.
-    
-    \item[$N_G$ (n\_gallery, citra galeri per identitas)] Jumlah citra referensi per individu penyu yang disimpan sebagai galeri untuk dibandingkan dengan citra \textit{query} saat re-identifikasi. Hubungannya dengan performa tidak linear: $N_G=3$ optimal, sedangkan $N_G=1$ terlalu sedikit referensi (performa turun ke 58{,}2\%) dan $N_G=5$ mengorbankan jumlah identitas serta citra \textit{query} yang tersedia untuk pengujian, sehingga performa justru menurun.
-\end{description}
-
-\subsubsection{Parameter Arsitektur}
-
-\begin{description}
-    \item[Backbone] Jaringan tulang punggung ekstraksi fitur, di sini varian ViT DINOv3 berukuran S, B, dan L (kecil ke besar). Performa meningkat seiring bertambahnya kapasitas model (ViT-S 61{,}4\% $\rightarrow$ ViT-B 78{,}0\% $\rightarrow$ ViT-L 80{,}4\% pada Rank-1), namun dengan \textit{diminishing return}: lompatan dari S ke B jauh lebih besar dibandingkan B ke L, sementara biaya komputasi terus meningkat signifikan.
-    
-    \item[$d_e$ (embed\_dim, dimensi embedding)] Panjang vektor fitur akhir yang merepresentasikan identitas penyu di ruang embedding. Terdapat titik optimal di tengah ($d_e=256$), bukan pola "semakin besar semakin baik". Dimensi yang terlalu besar ($d_e=512$) berisiko \textit{overfitting} karena ruang representasi menjadi terlalu longgar relatif terhadap jumlah data.
-    
-    \item[$p_{\text{drop}}$ (dropout)] Probabilitas menonaktifkan neuron secara acak saat pelatihan sebagai regularisasi agar model tidak terlalu bergantung pada fitur tertentu. Pada sistem ini, dropout justru merugikan performa: performa terbaik dicapai pada $p_{\text{drop}}=0{,}0$ dan terus menurun seiring dropout dinaikkan, mengindikasikan model sudah cukup teregulasi secara alami (kemungkinan melalui augmentasi data), sehingga dropout tambahan hanya membuang informasi berguna.
-\end{description}
-
-\subsubsection{Parameter Loss (Metric Learning)}
-
-\begin{description}
-    \item[$s_a$ (arcface\_scale)] Faktor skala yang mengalikan nilai kemiripan sudut (\textit{cosine}) sebelum masuk fungsi \textit{softmax} pada ArcFace, mengontrol ketajaman distribusi probabilitas antarkelas. Skala kecil ($s_a=16{,}0$) membuat batas antarkelas kabur sehingga performa turun cukup besar (Rank-1 $-5{,}1$ poin persentase), sedangkan skala besar ($s_a=64{,}0$) menghasilkan batas keputusan yang lebih tegas.
-    
-    \item[$m_a$ (arcface\_margin)] Margin sudut tambahan yang dipaksakan antara fitur suatu identitas dan bobot kelasnya sendiri, memaksa kelas-kelas terpisah lebih jauh pada \textit{hypersphere}. Terdapat titik optimal pada $m_a=1{,}0$ (lebih tinggi dari nilai acuan 0{,}5), tetapi jika terlalu besar ($m_a=2{,}0$) justru menyulitkan konvergensi optimisasi ArcFace dan menurunkan performa.
-    
-    \item[$m_t$ (triplet\_margin)] Jarak minimum yang diinginkan antara pasangan \textit{anchor-positive} dan \textit{anchor-negative} pada Triplet Loss. Pengaruhnya terhadap performa relatif kecil; sistem tidak terlalu sensitif terhadap parameter ini (selisih di bawah 1{,}5 poin persentase pada seluruh metrik).
-    
-    \item[$\lambda_t$ (triplet\_weight)] Bobot kontribusi Triplet Loss terhadap total loss, yang dijumlahkan dengan ArcFace Loss. Temuan menarik: performa terbaik justru dicapai ketika Triplet Loss dimatikan sama sekali ($\lambda_t=0{,}0$). Penambahan Triplet Loss menurunkan performa secara monoton, kemungkinan karena kedua fungsi loss saling berkonflik pada arah gradien, bukan saling melengkapi.
-\end{description}
-
-\subsubsection{Parameter Pelatihan}
-
-\begin{description}
-    \item[$P$ (p\_identities, identitas per batch)] Jumlah individu penyu berbeda yang dimasukkan dalam satu batch pelatihan. Performa stabil pada $P=8$--16, tetapi menurun tajam pada $P=32$ (Rank-1 turun ke 68{,}5\%), kemungkinan karena batch besar mengurangi jumlah iterasi efektif per epoch sehingga model kurang menyerap variasi data pada anggaran epoch yang sama.
-    
-    \item[$K$ (k\_images, citra per identitas)] Jumlah citra dari identitas yang sama dalam satu batch, digunakan untuk membentuk pasangan positif pada Triplet Loss. Nilai $K=2$ justru memberikan performa terbaik, sedangkan $K=8$ menurunkan performa karena mengurangi keragaman jumlah identitas berbeda yang dilihat model per iterasi (trade-off dengan $P$ pada ukuran batch yang tetap).
-    
-    \item[$E$ (num\_epoch, jumlah epoch)] Berapa kali seluruh dataset dilewati selama pelatihan. Performa terus meningkat tanpa tanda saturasi yang jelas hingga $E=150$ (Rank-1 87{,}0\%), menunjukkan model masih dapat belajar lebih baik dengan pelatihan lebih panjang, meski dengan konsekuensi waktu komputasi yang jauh lebih besar.
-    
-    \item[$W$ (warmup\_epoch)] Jumlah epoch awal saat \textit{learning rate} dinaikkan secara bertahap dari nilai kecil, untuk menghindari lonjakan gradien di awal pelatihan ketika bobot masih acak. Warmup yang lebih pendek ($W=3$) sedikit lebih baik dibandingkan nilai acuan ($W=5$), menunjukkan warmup yang terlalu panjang mengurangi efisiensi pemakaian anggaran epoch yang terbatas.
-    
-    \item[$G_{\max}$ (grad\_clip, gradient clipping)] Batas atas norma gradien sebelum pembaruan bobot, untuk mencegah gradien meledak (\textit{exploding gradient}). Pengaruhnya kecil pada rentang nilai yang diuji; pembatasan yang terlalu ketat ($G_{\max}=0{,}5$) sedikit menghambat kecepatan pembelajaran.
-    
-    \item[$P_{\text{stop}}$ (patience early stopping)] Jumlah interval evaluasi tanpa perbaikan sebelum pelatihan dihentikan otomatis, untuk mencegah \textit{overfitting} dan pemborosan komputasi. Pengaruhnya terhadap performa minimal; nilai patience yang lebih besar (20--40) memberi model kesempatan lebih lama untuk membaik dengan sedikit keuntungan mAP, meski disertai biaya waktu pelatihan yang lebih besar.
-\end{description}
-
-\subsubsection{Parameter Optimizer}
-
-\begin{description}
-    \item[$\lambda_w$ (weight\_decay)] Regularisasi $L_2$ yang menekan besaran bobot model untuk mencegah \textit{overfitting}. Model relatif tidak sensitif terhadap parameter ini, kemungkinan karena efek regularisasi sudah cukup diperoleh dari sumber lain seperti augmentasi data.
-    
-    \item[$\eta_{\text{base}}$ (base\_lr)] \textit{Learning rate} untuk bagian \textit{head} (lapisan klasifikasi/\textit{metric learning}) di luar backbone. Merupakan parameter paling sensitif dalam keseluruhan sistem: baik dinaikkan maupun diturunkan dari nilai acuan, performa turun drastis hingga di bawah 57\% pada Rank-1, menunjukkan bahwa optimisasi \textit{head} sangat bergantung pada laju belajar yang presisi.
-    
-    \item[$\eta_{\text{bb}}$ (backbone\_base\_lr)] \textit{Learning rate} khusus untuk \textit{fine-tuning} backbone, biasanya jauh lebih kecil dari \textit{head} agar fitur \textit{pretrained} tidak rusak. Menunjukkan pola berlawanan dengan $\eta_{\text{base}}$: menaikkan LR backbone ($10^{-4}$) justru meningkatkan performa secara signifikan (Rank-1 87{,}8\%), mengindikasikan konfigurasi acuan terlalu konservatif dalam \textit{fine-tuning} fitur DINOv3 untuk domain penyu laut.
-    
-    \item[$\gamma$ (lr\_decay, faktor peluruhan LR per layer)] Faktor pengali bertingkat yang membuat \textit{layer} lebih dekat ke input memiliki \textit{learning rate} lebih kecil dibandingkan \textit{layer} dekat output (\textit{layer-wise LR decay}), umum digunakan pada \textit{fine-tuning} transformer \textit{pretrained}. Pengaruhnya kecil terhadap performa; nilai $\gamma$ yang lebih landai (0{,}85, yaitu rasio LR antarlayer lebih seragam) sedikit lebih menguntungkan untuk metrik \textit{ranking} yang lebih dalam (Rank-5) dan mAP.
-\end{description}
-
-\subsubsection{Rangkuman}
-
-Secara umum, parameter yang paling sensitif dan berpengaruh besar terhadap performa adalah \textbf{base learning rate}, \textbf{backbone learning rate}, \textbf{ukuran backbone}, \textbf{ukuran citra}, dan \textbf{jumlah epoch} — seluruhnya berkaitan dengan kapasitas belajar model dan seberapa baik fitur dapat diadaptasi terhadap domain penyu laut. Sebaliknya, parameter yang bersifat regularisasi (\textbf{weight decay}, \textbf{gradient clipping}, \textbf{patience}, \textbf{triplet margin}) relatif tidak berpengaruh besar, mengindikasikan bahwa sistem tidak memerlukan regularisasi tambahan yang signifikan pada skala dataset yang digunakan.
-
 %% ============================================================
 \section{Hasil Pengujian Acuan}
 %% ============================================================
-
+ 
 \subsection{Kurva Pelatihan}
-
-Gambar~\ref{fig:training_curves} menampilkan kurva \textit{total loss} pelatihan dan metrik validasi (\textit{Rank-1} dan mAP) terhadap \textit{epoch}. Kurva ini diamati untuk memverifikasi tiga hal berikut:
-
+ 
+Gambar~\ref{fig:training_curves} menampilkan kurva \textit{total loss} pelatihan dan metrik validasi (\textit{Rank-1} dan mAP) terhadap \textit{epoch}. Kurva ini diamati untuk memverifikasi:
+ 
 \begin{itemize}
-    \item \textit{Loss} menurun secara monoton tanpa lonjakan besar, yang menunjukkan proses pelatihan berjalan stabil.
+    \item \textit{Loss} menurun secara monoton tanpa lonjakan besar, menunjukkan pelatihan stabil.
     \item Metrik validasi meningkat secara konsisten selama fase \textit{warmup} hingga \textit{cosine decay} aktif.
-    \item Tidak terdapat \textit{overfitting} yang signifikan, yaitu \textit{loss} validasi tidak meningkat drastis sementara \textit{loss} pelatihan terus menurun.
+    \item Tidak terdapat \textit{overfitting} yang signifikan (yaitu, \textit{loss} validasi tidak meningkat drastis sementara \textit{loss} pelatihan terus turun).
 \end{itemize}
-
+ 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{bab3/reid_default/training_curves.png}
     \caption{Kurva pelatihan konfigurasi acuan: (kiri) \textit{total loss} per \textit{epoch}; (kanan) \textit{Rank-1} dan mAP pada data validasi setiap 5 \textit{epoch}.}
     \label{fig:training_curves}
 \end{figure}
-
+ 
 \subsection{Hasil Evaluasi Acuan}
-
-Tabel~\ref{tab:baseline_results} menyajikan hasil evaluasi konfigurasi acuan pada dataset pengujian SeaTurtleIDHeads. Setiap metrik dilaporkan dalam dua kondisi, yaitu menggunakan \textit{cosine similarity} murni (\textit{Cosine}) dan setelah \textit{k-reciprocal re-ranking} (\textit{+Re-rank}).
-
+ 
+Tabel~\ref{tab:baseline_results} menyajikan hasil evaluasi konfigurasi acuan pada keempat dataset pengujian. Setiap metrik dilaporkan dua kali: menggunakan \textit{cosine similarity} murni (\textit{Cosine}) dan setelah \textit{k-reciprocal re-ranking} (\textit{+Re-rank}).
+ 
 \begin{table}[H]
 \centering
 \caption{Hasil evaluasi konfigurasi acuan pada dataset pengujian SeaTurtleIDHeads}
@@ -246,34 +180,34 @@ mAP     (\%) & 83.6\% & 84.6\% \\
 \multicolumn{3}{l}{\footnotesize \textit{+Re-rank} = setelah k-reciprocal re-ranking ($k_1{=}20$, $k_2{=}6$, $\lambda_{\text{rr}}{=}0{.}3$).} \\
 \end{tabular}
 \end{table}
-
+ 
 \subsection{Analisis Hasil Acuan}
+ 
+Berdasarkan hasil pada Tabel~\ref{tab:baseline_results}, beberapa observasi dapat dibuat:
 
-Berdasarkan hasil pada Tabel~\ref{tab:baseline_results}, dapat diamati beberapa hal berikut.
-
-\textbf{Peningkatan performa antar-\textit{rank}.} Akurasi meningkat secara konsisten seiring bertambahnya nilai \textit{rank} yang dipertimbangkan, baik pada metode \textit{cosine} maupun \textit{re-rank}. Peningkatan dari Rank-1 ke Rank-5 tergolong signifikan, sedangkan peningkatan dari Rank-5 ke Rank-10 relatif lebih kecil.
-
-\textbf{Kontribusi re-ranking.} Peningkatan dari \textit{cosine similarity} ke \textit{k-reciprocal re-ranking} sebesar 0,6 poin persentase pada \textit{Rank-1} dan 1,0 poin persentase pada mAP menunjukkan bahwa struktur hubungan timbal balik antar tetangga dalam ruang \textit{embedding} berhasil dieksploitasi oleh algoritma re-ranking sebagai tahap pascaproses tanpa biaya pelatihan tambahan.
-
+\textbf{Performa Antara Rank-1, Rank-5, dan Rank-10} Setiap rank memiliki peningkatan akurasi. Rank-1 ke Rank-5 memiliki peningkatan yang signifikan baik dari metode cosine maupun re-rank. Rank-5 ke rank-10 memiliki peningkatan yang lebih kecil.
+ 
+\textbf{Kontribusi re-ranking.} Peningkatan dari \textit{cosine similarity} ke \textit{k-reciprocal re-ranking} sebesar 0.6 poin persentase pada \textit{Rank-1} dan 1.0 poin persentase pada mAP menunjukkan bahwa struktur hubungan timbal balik antar tetangga dalam ruang \textit{embedding} berhasil dieksploitasi oleh algoritma re-ranking sebagai tahap pasca-proses tanpa biaya pelatihan tambahan.
+ 
 \subsection{Visualisasi t-SNE}
-
-Gambar~\ref{fig:tsne} menampilkan visualisasi t-SNE dari vektor \textit{embedding} 20 identitas teratas pada data pengujian \textit{in-distribution}. Pengelompokan (\textit{clustering}) yang baik pada ruang t-SNE, yaitu ketika titik-titik dari identitas yang sama berdekatan dan terpisah dari identitas lain, mengonfirmasi bahwa model berhasil membangun ruang \textit{embedding} yang diskriminatif.
-
+ 
+Gambar~\ref{fig:tsne} menampilkan visualisasi t-SNE dari vektor \textit{embedding} 20 identitas teratas pada data pengujian \textit{in-distribution}. Pengelompokan (\textit{clustering}) yang baik di ruang t-SNE, di mana titik-titik dari identitas yang sama berdekatan dan terpisah dari identitas lain, mengkonfirmasi bahwa model berhasil membangun ruang \textit{embedding} yang diskriminatif.
+ 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{bab3/reid_default/tsne_test.png}
     \caption{Visualisasi t-SNE untuk 20 identitas penyu teratas pada data pengujian \textit{in-distribution}. Setiap warna mewakili satu identitas.}
     \label{fig:tsne}
 \end{figure}
-
+ 
 %% ============================================================
 \section{Hasil Pengujian Variasi Parameter}
 %% ============================================================
-
+ 
 Bagian ini menyajikan hasil eksperimen variasi setiap parameter secara individual. Metrik utama yang digunakan untuk perbandingan adalah \textit{Rank-1} dan mAP pada dataset pengujian SeaTurtleIDHeads dengan \textit{k-reciprocal re-ranking}.
-
+ 
 \subsection{Variasi Parameter Dataset}
-
+ 
 \subsubsection{Ukuran Citra (\textit{img\_size})}
 
 \begin{table}[H]
@@ -287,15 +221,15 @@ $\mathit{img\_size}$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Ran
 \hline
 224         & 73.3\% & 91.5\% & 94.9\% & 81.9\% \\
 \textbf{256} & 78.0\% & 91.3\% & 95.3\% & 84.6\% \\
-320         & 79.1\% & 92.5\% & 96.0\% & 84.9\% \\
+320         & 79.1\% & 92.5\% & 96.0\% & 84.9\% \\ %f
 \hline
 \end{tabular}
 \end{table}
-
-Hasil pengujian menunjukkan bahwa performa meningkat seiring dengan semakin tingginya resolusi citra yang digunakan. Namun, perlu diperhatikan bahwa resolusi citra yang lebih tinggi juga meningkatkan kebutuhan komputasi.
+ 
+\textbf{Analisis:} Dari data hasil pengujian tersebut, dapat dilihat terdapat peningkatan performa semakin tinggi resolusi citra. Namun, perlu diperhatikan bahwa semakin tinggi resolusi citra, semakin tinggi juga kebutuhan komputasinya.
 
 \subsubsection{Jumlah Citra Galeri per Identitas (\textit{n\_gallery})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh jumlah citra galeri per identitas terhadap performa (+Re-rank)}
@@ -311,13 +245,13 @@ $N_G$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} & \t
 \hline
 \end{tabular}
 \end{table}
-
-Hasil pengujian menunjukkan bahwa $N_G$=3 memberikan performa tertinggi, diikuti oleh $N_G$=5 dan $N_G$=1. Secara hipotesis, performa tertinggi seharusnya dicapai pada $N_G$=5. Namun, adanya kebutuhan jumlah citra minimum per identitas menyebabkan berkurangnya jumlah identitas yang dapat digunakan dalam pelatihan sekaligus berkurangnya jumlah citra \textit{query}, sehingga performa yang dicapai justru lebih rendah dibandingkan $N_G$=3.
-
+ 
+\textbf{Analisis:} Dari data tersebut, terlihat bahwa $N_G$=3 memiliki performa tertinggi yang diikuti dengan $N_G$=5 dan $N_G$=1. Secara hipotesis, $N_G$=5 seharusnya memiliki performa tertinggi, tetapi dikarenakan terdapat kebutuhan citra minimum yang menyebabkan berkurangnya identitas yang dapat dilatih, dan berkurangnya citra \textit{query}.
+ 
 \subsection{Variasi Parameter Arsitektur}
-
+ 
 \subsubsection{Backbone}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh pemilihan backbone terhadap performa (+Re-rank)}
@@ -333,11 +267,11 @@ ViT-L/16             & 80.4\% & 94.4\% & 96.2\% & 86.6\% \\
 \hline
 \end{tabular}
 \end{table}
-
-Performa meningkat secara konsisten seiring bertambahnya ukuran backbone, dari ViT-S/16 hingga ViT-L/16, pada seluruh metrik yang diukur. Peningkatan dari ViT-S/16 ke ViT-B/16 cukup signifikan (Rank-1 naik 16,6 poin persentase), sedangkan peningkatan dari ViT-B/16 ke ViT-L/16 lebih moderat (Rank-1 naik 2,4 poin persentase). Hal ini menunjukkan bahwa kapasitas representasi backbone yang lebih besar membantu membedakan identitas penyu secara lebih baik, meskipun disertai \textit{diminishing return} serta konsekuensi kebutuhan komputasi dan memori yang jauh lebih besar pada ViT-L/16.
+ 
+\textbf{Analisis:} Performa meningkat secara konsisten seiring bertambahnya ukuran backbone, dari ViT-S/16 hingga ViT-L/16, pada seluruh metrik yang diukur. Peningkatan dari ViT-S/16 ke ViT-B/16 cukup signifikan (Rank-1 naik 16.6 poin persentase), sedangkan peningkatan dari ViT-B/16 ke ViT-L/16 lebih moderat (Rank-1 naik 2.4 poin persentase). Hal ini menunjukkan kapasitas representasi backbone yang lebih besar membantu membedakan identitas penyu secara lebih baik, meskipun dengan \textit{diminishing return} dan konsekuensi kebutuhan komputasi serta memori yang jauh lebih besar pada ViT-L/16.
 
 \subsubsection{Dimensi Embedding (\textit{embed\_dim})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh dimensi embedding terhadap performa (+Re-rank)}
@@ -353,11 +287,11 @@ $d_e$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} & \t
 \hline
 \end{tabular}
 \end{table}
-
-Hasil pengujian menunjukkan bahwa $d_e$=256 memberikan performa tertinggi pada Rank-1 dan mAP. Penurunan performa pada $d_e$=512 kemungkinan disebabkan oleh \textit{overfitting} akibat dimensi embedding yang terlalu besar relatif terhadap skala data.
+ 
+\textbf{Analisis:} Dari pengujian tersebut, terlihat bahwa $d_e$=256 memiliki performa tertinggi pada rank-1 dan mAP. Hal ini dikarenakan terdapat kemungkinan \textit{overfitting} pada $d_e$=512.
 
 \subsubsection{Dropout}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh dropout terhadap performa (+Re-rank)}
@@ -373,13 +307,13 @@ $p_{\text{drop}}$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-1
 \hline
 \end{tabular}
 \end{table}
-
-Hasil pengujian menunjukkan bahwa performa terbaik dicapai pada $p_{\text{drop}}$=0,0, dan performa terus menurun seiring bertambahnya nilai dropout.
+ 
+\textbf{Analisis:} Dari pengujian tersebut, $p_{\text{drop}}$=0.0 memiliki performa terbaik.
 
 \subsection{Variasi Parameter Metric Learning}
-
+ 
 \subsubsection{Skala ArcFace (\textit{arcface\_scale})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh skala ArcFace terhadap performa (+Re-rank)}
@@ -394,11 +328,11 @@ $s_a$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} & \t
 \hline
 \end{tabular}
 \end{table}
-
-Penurunan skala ArcFace dari 64,0 (acuan) menjadi 16,0 menurunkan performa pada seluruh metrik, khususnya Rank-1 yang turun 5,1 poin persentase dan mAP yang turun 2,9 poin persentase. Skala yang terlalu kecil membuat distribusi sudut antarkelas pada \textit{hypersphere} ArcFace menjadi kurang tajam, sehingga margin antar identitas yang mirip menjadi lebih sulit dipisahkan.
+ 
+\textbf{Analisis:} Penurunan skala ArcFace dari 64.0 (acuan) ke 16.0 menurunkan performa pada seluruh metrik, khususnya Rank-1 yang turun 5.1 poin persentase dan mAP yang turun 2.9 poin persentase. Skala yang terlalu kecil membuat distribusi sudut antar kelas pada \textit{hypersphere} ArcFace menjadi kurang tajam, sehingga margin antar identitas yang mirip menjadi lebih sulit dipisahkan.
 
 \subsubsection{Margin ArcFace (\textit{arcface\_margin})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh margin ArcFace terhadap performa (+Re-rank)}
@@ -415,11 +349,11 @@ $m_a$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} & \t
 \hline
 \end{tabular}
 \end{table}
-
-Performa terbaik justru dicapai pada $m_a$=1,0, sedikit lebih tinggi dibandingkan nilai acuan $m_a$=0,5 (Rank-1 80,0\% berbanding 78,0\%; mAP 85,8\% berbanding 84,6\%). Namun, ketika margin diperbesar lebih lanjut menjadi $m_a$=2,0, performa justru menurun hingga di bawah nilai acuan. Pola ini menunjukkan adanya titik optimal margin yang cukup besar untuk memberikan separasi antarkelas yang kuat, tetapi tidak terlalu besar sehingga menyulitkan konvergensi optimisasi ArcFace.
+ 
+\textbf{Analisis:} Performa terbaik justru dicapai pada $m_a$=1.0, sedikit lebih tinggi dibandingkan nilai acuan $m_a$=0.5 (Rank-1 80.0\% vs 78.0\%, mAP 85.8\% vs 84.6\%). Namun, ketika margin diperbesar lebih lanjut menjadi $m_a$=2.0, performa justru menurun di bawah nilai acuan. Pola ini menunjukkan adanya titik optimal margin yang cukup besar untuk memberikan separasi antar kelas yang kuat, tetapi tidak terlalu besar sehingga menyulitkan konvergensi optimisasi ArcFace.
 
 \subsubsection{Margin Triplet (\textit{triplet\_margin})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh margin Triplet terhadap performa (+Re-rank)}
@@ -435,11 +369,11 @@ $m_t$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} & \t
 \hline
 \end{tabular}
 \end{table}
-
-Perbedaan performa antar nilai margin Triplet relatif kecil dibandingkan parameter lain, yang mengindikasikan bahwa sistem tidak terlalu sensitif terhadap parameter ini. Margin yang lebih besar ($m_t$=0,5) memberikan Rank-5 dan Rank-10 yang sedikit lebih baik, sementara margin yang lebih kecil ($m_t$=0,1) sedikit menurunkan Rank-1 dan mAP. Meski demikian, secara keseluruhan selisihnya tidak lebih dari 1,5 poin persentase pada setiap metrik.
+ 
+\textbf{Analisis:} Perbedaan performa antar nilai margin Triplet relatif kecil dibandingkan parameter lain, mengindikasikan sistem tidak terlalu sensitif terhadap parameter ini. Margin yang lebih besar ($m_t$=0.5) memberikan Rank-5 dan Rank-10 sedikit lebih baik, sementara margin yang lebih kecil ($m_t$=0.1) sedikit menurunkan performa Rank-1 dan mAP, namun secara keseluruhan selisihnya tidak lebih dari 1.5 poin persentase pada setiap metrik.
 
 \subsubsection{Bobot Triplet (\textit{triplet\_weight})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh bobot Triplet Loss terhadap performa (+Re-rank)}
@@ -456,13 +390,13 @@ $\lambda_t$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)
 \hline
 \end{tabular}
 \end{table}
-
-Menariknya, performa tertinggi justru dicapai ketika Triplet Loss tidak diikutsertakan sama sekali ($\lambda_t$=0,0), dengan Rank-1 sebesar 83,4\% dan mAP sebesar 88,4\%, keduanya lebih tinggi dibandingkan konfigurasi acuan. Performa menurun secara monoton seiring bertambahnya bobot Triplet Loss. Hal ini mengindikasikan bahwa, pada konfigurasi dan skala dataset ini, ArcFace Loss saja sudah cukup diskriminatif, sementara penambahan Triplet Loss justru dapat mengganggu proses optimisasi, kemungkinan akibat konflik gradien antara kedua fungsi loss.
+ 
+\textbf{Analisis:} Menariknya, performa tertinggi justru dicapai ketika Triplet Loss tidak diikutsertakan sama sekali ($\lambda_t$=0.0), dengan Rank-1 83.4\% dan mAP 88.4\%, keduanya lebih tinggi dibandingkan konfigurasi acuan. Performa menurun secara monoton seiring bertambahnya bobot Triplet Loss. Hal ini mengindikasikan bahwa pada konfigurasi dan skala dataset ini, ArcFace Loss saja sudah cukup diskriminatif, sementara penambahan Triplet Loss justru dapat mengganggu proses optimisasi (kemungkinan akibat konflik gradien antara kedua fungsi loss).
 
 \subsection{Variasi Parameter Pelatihan}
-
+ 
 \subsubsection{Komposisi Batch: Identitas per Batch ($P$) dan Citra per Identitas ($K$)}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh komposisi batch terhadap performa (+Re-rank)}
@@ -480,11 +414,11 @@ $P$ & $K$ & \textbf{Batch Size} & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & 
 \hline
 \end{tabular}
 \end{table}
-
-Pada variasi $P$, performa relatif stabil antara $P$=8 dan $P$=16, tetapi menurun tajam pada $P$=32 (Rank-1 turun menjadi 68,5\%). Hal ini kemungkinan disebabkan oleh berkurangnya jumlah iterasi efektif per epoch akibat ukuran batch yang lebih besar, sehingga model memerlukan lebih banyak epoch untuk mencapai konvergensi optimal. Pada variasi $K$, performa terbaik justru dicapai pada $K$=2 (Rank-1 79,1\%; mAP 86,3\%), sedangkan $K$=8 menurunkan performa secara signifikan. Hal ini menunjukkan bahwa jumlah citra per identitas yang terlalu banyak dalam satu batch mengurangi keberagaman identitas yang dilihat model pada setiap iterasi.
+ 
+\textbf{Analisis:} Pada variasi $P$, performa relatif stabil antara $P$=8 dan $P$=16, tetapi menurun tajam pada $P$=32 (Rank-1 turun ke 68.5\%). Hal ini kemungkinan disebabkan berkurangnya jumlah iterasi efektif per epoch akibat batch size yang lebih besar, sehingga model memerlukan lebih banyak epoch untuk konvergen optimal. Pada variasi $K$, performa terbaik justru dicapai pada $K$=2 (Rank-1 79.1\%, mAP 86.3\%), sedangkan $K$=8 menurunkan performa secara signifikan, menunjukkan bahwa jumlah citra per identitas yang terlalu banyak dalam satu batch mengurangi keberagaman identitas yang dilihat model pada tiap iterasi.
 
 \subsubsection{Jumlah Epoch dan Warmup Epoch}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh jumlah epoch dan warmup epoch terhadap performa (+Re-rank)}
@@ -503,11 +437,11 @@ $(E,\ W)$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} 
 \hline
 \end{tabular}
 \end{table}
-
-Performa meningkat secara konsisten seiring bertambahnya jumlah epoch pelatihan, dari $E$=30 hingga $E$=150, tanpa tanda-tanda saturasi yang jelas (Rank-1 naik dari 69,7\% menjadi 87,0\%). Hal ini mengindikasikan bahwa model masih dapat terus belajar dengan pelatihan yang lebih panjang, meskipun dengan konsekuensi waktu komputasi yang jauh lebih besar. Untuk warmup epoch, baik $W$=3 maupun $W$=10 memberikan performa yang sedikit lebih tinggi dibandingkan nilai acuan $W$=5, dengan $W$=3 memberikan mAP tertinggi (86,1\%). Hal ini menunjukkan bahwa fase warmup yang terlalu panjang dapat sedikit mengurangi efisiensi pelatihan pada anggaran epoch yang tetap.
+ 
+\textbf{Analisis:} Performa meningkat secara konsisten seiring bertambahnya jumlah epoch pelatihan, dari $E$=30 hingga $E$=150, tanpa tanda-tanda saturasi yang jelas (Rank-1 naik dari 69.7\% menjadi 87.0\%). Hal ini mengindikasikan model masih dapat terus belajar dengan pelatihan yang lebih panjang, meskipun dengan konsekuensi waktu komputasi yang jauh lebih besar. Untuk warmup epoch, baik $W$=3 maupun $W$=10 memberikan performa yang sedikit lebih tinggi dibandingkan nilai acuan $W$=5, dengan $W$=3 memberikan mAP tertinggi (86.1\%), menunjukkan bahwa fase warmup yang terlalu panjang dapat sedikit mengurangi efisiensi pelatihan pada anggaran epoch yang tetap.
 
 \subsubsection{Gradient Clipping (\textit{grad\_clip})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh gradient clipping terhadap performa (+Re-rank)}
@@ -523,11 +457,11 @@ $G_{\max}$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)}
 \hline
 \end{tabular}
 \end{table}
-
-Perbedaan performa antar nilai gradient clipping relatif kecil. Nilai $G_{\max}$=5,0 memberikan performa terbaik pada Rank-1 dan mAP, meskipun selisihnya tidak signifikan dibandingkan nilai acuan. Nilai $G_{\max}$=0,5 yang terlalu ketat sedikit menurunkan Rank-1, yang mengindikasikan bahwa pembatasan gradien yang terlalu agresif dapat sedikit menghambat kecepatan pembelajaran, meskipun dampaknya secara umum tidak besar pada rentang nilai yang diuji.
+ 
+\textbf{Analisis:} Perbedaan performa antar nilai gradient clipping relatif kecil, dengan $G_{\max}$=5.0 memberikan performa terbaik pada Rank-1 dan mAP, meskipun selisihnya tidak signifikan dibandingkan nilai acuan. $G_{\max}$=0.5 yang terlalu ketat sedikit menurunkan Rank-1, mengindikasikan pembatasan gradien yang terlalu agresif dapat sedikit menghambat kecepatan pembelajaran, meskipun dampaknya secara umum tidak besar pada rentang nilai yang diuji.
 
 \subsubsection{Patience Early Stopping}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh patience early stopping terhadap performa (+Re-rank)}
@@ -544,13 +478,13 @@ $P_{\text{stop}}$ & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-1
 \hline
 \end{tabular}
 \end{table}
-
-Nilai patience tidak memberikan pengaruh besar terhadap performa akhir; seluruh nilai yang diuji menghasilkan Rank-1 pada rentang 77,6\%--78,5\% dan mAP pada rentang 84,5\%--84,9\%. Patience yang lebih besar ($P_{\text{stop}}$=20 dan 40) memberikan sedikit peningkatan mAP dibandingkan nilai acuan, yang menunjukkan bahwa memberi model kesempatan lebih lama sebelum penghentian dini dapat sedikit menguntungkan, meskipun dengan trade-off berupa waktu pelatihan yang lebih panjang.
+ 
+\textbf{Analisis:} Nilai patience tidak memberikan pengaruh besar terhadap performa akhir, dengan seluruh nilai yang diuji menghasilkan Rank-1 pada rentang 77.6\%–78.5\% dan mAP pada rentang 84.5\%–84.9\%. Patience yang lebih besar ($P_{\text{stop}}$=20 dan 40) memberikan sedikit peningkatan mAP dibandingkan nilai acuan, menunjukkan bahwa memberi model kesempatan lebih lama sebelum penghentian dini dapat sedikit menguntungkan, namun dengan trade-off waktu pelatihan yang lebih panjang.
 
 \subsection{Variasi Parameter Optimizer}
-
+ 
 \subsubsection{Weight Decay}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh weight decay terhadap performa (+Re-rank)}
@@ -566,11 +500,11 @@ $10^{-3}$                 & 78.5\% & 91.3\% & 95.3\% & 84.9\% \\
 \hline
 \end{tabular}
 \end{table}
-
-Seluruh nilai weight decay yang diuji menghasilkan performa yang berdekatan (Rank-1 78,0\%--79,1\%; mAP 84,6\%--85,2\%), dengan $\lambda_w=10^{-5}$ memberikan performa sedikit lebih baik dibandingkan nilai acuan. Hal ini menunjukkan bahwa model relatif tidak sensitif terhadap regularisasi weight decay pada rentang nilai yang diuji, kemungkinan karena penggunaan dropout dan augmentasi data telah memberikan efek regularisasi yang cukup.
+ 
+\textbf{Analisis:} Seluruh nilai weight decay yang diuji menghasilkan performa yang berdekatan (Rank-1 78.0\%–79.1\%, mAP 84.6\%–85.2\%), dengan $\lambda_w=10^{-5}$ memberikan performa sedikit lebih baik dibandingkan nilai acuan. Hal ini menunjukkan model relatif tidak sensitif terhadap regularisasi weight decay pada rentang nilai yang diuji, kemungkinan karena penggunaan dropout dan augmentasi data telah memberikan efek regularisasi yang cukup.
 
 \subsubsection{Base Learning Rate dan Backbone Base Learning Rate}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh learning rate terhadap performa (+Re-rank)}
@@ -588,11 +522,11 @@ $10^{-3}$                & $10^{-6}$     & 68.2\% & 88.7\% & 92.3\% & 77.2\% \\
 \hline
 \end{tabular}
 \end{table}
-
-Base learning rate merupakan salah satu parameter yang paling sensitif dalam sistem ini. Baik memperbesar ($10^{-2}$) maupun memperkecil ($10^{-4}$) nilai $\eta_{\text{base}}$ dari nilai acuan menyebabkan penurunan performa yang drastis (Rank-1 turun hingga di bawah 57\%), yang menunjukkan bahwa proses optimisasi \textit{head} klasifikasi/\textit{metric learning} sangat bergantung pada laju belajar yang tepat. Sebaliknya, backbone base learning rate menunjukkan pola yang berbeda: memperbesar $\eta_{\text{bb}}$ menjadi $10^{-4}$ justru meningkatkan performa secara signifikan (Rank-1 87,8\%; mAP 91,6\%), sementara memperkecilnya menjadi $10^{-6}$ menurunkan performa. Hal ini mengindikasikan bahwa pada konfigurasi acuan, backbone di-\textit{fine-tune} terlalu konservatif, sehingga laju belajar backbone yang lebih tinggi memungkinkan adaptasi fitur DINOv3 yang lebih baik terhadap domain penyu laut.
+ 
+\textbf{Analisis:} Base learning rate ternyata merupakan salah satu parameter yang paling sensitif dalam sistem ini: baik memperbesar ($10^{-2}$) maupun memperkecil ($10^{-4}$) nilai $\eta_{\text{base}}$ dari acuan menyebabkan penurunan performa yang drastis (Rank-1 turun hingga di bawah 57\%), menunjukkan proses optimisasi \textit{head} klasifikasi/\textit{metric learning} sangat bergantung pada laju belajar yang tepat. Sebaliknya, backbone base learning rate menunjukkan pola berbeda: memperbesar $\eta_{\text{bb}}$ menjadi $10^{-4}$ justru meningkatkan performa secara signifikan (Rank-1 87.8\%, mAP 91.6\%), sementara memperkecilnya menjadi $10^{-6}$ menurunkan performa. Hal ini mengindikasikan bahwa pada konfigurasi acuan, backbone di-\textit{fine-tune} terlalu konservatif, dan laju belajar backbone yang lebih tinggi memungkinkan adaptasi fitur DINOv3 yang lebih baik terhadap domain penyu laut.
 
 \subsubsection{Faktor Peluruhan LR per Layer (\textit{lr\_decay})}
-
+ 
 \begin{table}[H]
 \centering
 \caption{Pengaruh faktor peluruhan LR per layer terhadap performa (+Re-rank)}
@@ -608,12 +542,12 @@ $\gamma$ & \textbf{LR layer-1 / LR$_{\text{bb}}$} & \textbf{Rank-1 (\%)} & \text
 \hline
 \end{tabular}
 \end{table}
-
-Perbedaan performa antar nilai faktor peluruhan LR relatif kecil; $\gamma$=0,65 memberikan Rank-1 tertinggi (79,5\%), sedangkan $\gamma$=0,85 memberikan mAP tertinggi (84,9\%). Hal ini menunjukkan bahwa sistem cukup robust terhadap strategi peluruhan LR per layer pada rentang nilai yang diuji, meskipun peluruhan yang lebih landai ($\gamma$=0,85, yang berarti rasio LR antarlayer lebih seragam) sedikit lebih menguntungkan untuk metrik ranking yang lebih dalam (Rank-5) dan mAP.
+ 
+\textbf{Analisis:} Perbedaan performa antar nilai faktor peluruhan LR relatif kecil, dengan $\gamma$=0.65 memberikan Rank-1 tertinggi (79.5\%) namun $\gamma$=0.85 memberikan mAP tertinggi (84.9\%). Hal ini menunjukkan sistem cukup robust terhadap strategi peluruhan LR per layer pada rentang yang diuji, meskipun peluruhan yang lebih landai ($\gamma$=0.85, artinya rasio LR antar layer lebih seragam) sedikit lebih menguntungkan untuk metrik ranking yang lebih dalam (Rank-5) dan mAP.
 
 \subsection{Kombinasi Konfigurasi Optimal}
 
-Selain pengujian OFAT, dilakukan pula eksplorasi kombinasi beberapa nilai parameter yang menunjukkan performa individual terbaik pada pengujian sebelumnya, untuk melihat apakah efeknya bersifat aditif. Konfigurasi kombinasi yang diuji menggunakan $d_e$=256, $N_G$=3, $\mathit{img\_size}$=256, $K$=2, $P$=8, $E$=100, $W$=3, $p_{\text{drop}}$=0,0, $G_{\max}$=1,0, $P_{\text{stop}}$=20, $m_a$=1,0, $s_a$=32,0, $\lambda_t$=0,0, $m_t$=0,3, $\lambda_w=10^{-5}$, $\eta_{\text{base}}=10^{-3}$, $\eta_{\text{bb}}=10^{-4}$, dan $\gamma$=0,65. Tabel~\ref{tab:optimal_combo} membandingkan hasilnya dengan konfigurasi acuan.
+Selain pengujian OFAT, dilakukan pula eksplorasi kombinasi beberapa nilai parameter yang menunjukkan performa individual terbaik pada pengujian sebelumnya, untuk melihat apakah efeknya bersifat aditif. Konfigurasi kombinasi yang diuji menggunakan $d_e$=256, $N_G$=3, $\mathit{img\_size}$=256, $K$=2, $P$=8, $E$=100, $W$=3, $p_{\text{drop}}$=0.0, $G_{\max}$=1.0, $P_{\text{stop}}$=20, $m_a$=1.0, $s_a$=32.0, $\lambda_t$=0.0, $m_t$=0.3, $\lambda_w=10^{-5}$, $\eta_{\text{base}}=10^{-3}$, $\eta_{\text{bb}}=10^{-4}$, dan $\gamma$=0.65. Tabel~\ref{tab:optimal_combo} membandingkan hasilnya dengan konfigurasi acuan.
 
 \begin{table}[H]
 \centering
@@ -631,66 +565,142 @@ Kombinasi & 81.9\% & 95.3\% & 97.4\% & 87.9\% & 86.6\% & 95.5\% & 97.4\% & 90.5\
 \end{tabular}
 \end{table}
 
-Konfigurasi kombinasi, yang menggabungkan nilai-nilai parameter individual dengan performa terbaik (backbone learning rate yang lebih tinggi, jumlah epoch yang lebih banyak, tanpa Triplet Loss, margin ArcFace yang lebih besar, dan sebagainya), berhasil meningkatkan performa secara substansial dibandingkan konfigurasi acuan. Peningkatan paling menonjol terlihat pada hasil \textit{+Re-rank}, dengan Rank-1 naik 8,6 poin persentase (dari 78,0\% menjadi 86,6\%) dan mAP naik 5,9 poin persentase (dari 84,6\% menjadi 90,5\%). Hasil ini mengonfirmasi bahwa efek dari parameter-parameter terbaik bersifat sebagian aditif, sehingga kombinasi parameter optimal dari pengujian OFAT dapat dijadikan konfigurasi akhir sistem re-identifikasi penyu laut.
+\textbf{Analisis:} Konfigurasi kombinasi, yang menggabungkan nilai-nilai parameter individual dengan performa terbaik (backbone learning rate lebih tinggi, epoch lebih banyak, tanpa Triplet Loss, margin ArcFace lebih besar, dan sebagainya), berhasil meningkatkan performa secara substansial dibandingkan konfigurasi acuan. Peningkatan paling menonjol terlihat pada hasil \textit{+Re-rank}, dengan Rank-1 naik 8.6 poin persentase (dari 78.0\% menjadi 86.6\%) dan mAP naik 5.9 poin persentase (dari 84.6\% menjadi 90.5\%). Hasil ini mengonfirmasi bahwa efek dari parameter-parameter terbaik bersifat sebagian aditif, sehingga kombinasi parameter optimal dari pengujian OFAT dapat dijadikan konfigurasi akhir sistem re-identifikasi penyu laut.
 
 %% ============================================================
-\section{Pengujian dengan Data Luar (Cross-Dataset)}
-\label{sec:pengujian_data_luar}
+\section{Pengujian Kualitatif Cross-Dataset pada SeaTurtleID2022}
+\label{sec:pengujian_cross_dataset}
 %% ============================================================
 
-Untuk mengukur kemampuan generalisasi sistem di luar data yang digunakan selama pelatihan, konfigurasi kombinasi optimal (Tabel~\ref{tab:optimal_combo}) diuji lebih lanjut pada tiga dataset eksternal yang tidak pernah dilihat model selama pelatihan maupun validasi. Pengujian ini penting untuk menjawab apakah performa tinggi yang dicapai pada Subbab 4.4 bersifat spesifik terhadap distribusi data SeaTurtleIDHeads (\textit{in-distribution}), atau benar-benar mencerminkan representasi fitur yang dapat ditransfer ke domain dan populasi penyu laut yang berbeda.
+Untuk melihat kemampuan generalisasi model pada dataset penyu laut lain di luar SeaTurtleIDHeads, dilakukan pengujian tambahan secara kualitatif menggunakan dataset \textbf{SeaTurtleID2022} melalui notebook inferensi (\textit{inference-only}) yang memuat \textit{checkpoint} hasil pelatihan konfigurasi acuan.
 
-\subsection{Dataset Pengujian Eksternal}
+\subsection{Prosedur Pengujian}
 
-\begin{enumerate}
-    \item \textbf{SeaTurtleID2022 (cross-dataset primer)}: berisi 438 individu berbeda dari populasi yang lebih luas dibandingkan SeaTurtleIDHeads. Pembagian galeri/\textit{query} menggunakan \textit{time-aware open-set split} resmi dari penyedia dataset, dengan citra galeri berasal dari citra yang lebih lama dan citra \textit{query} dari citra yang lebih baru. Skema ini menyerupai kondisi nyata monitoring jangka panjang, saat individu difoto ulang pada kunjungan atau musim berikutnya.
-    \item \textbf{ZakynthosTurtles (transfer domain)}: penyu Mediterania dari perairan Zakynthos, Yunani. Pembagian galeri/\textit{query} menggunakan $N_G=3$ per identitas, mengikuti protokol yang sama dengan konfigurasi acuan.
-    \item \textbf{AmvrakikosTurtles (transfer domain)}: penyu Mediterania dari lokasi berbeda di Yunani (Teluk Amvrakikos). Pembagian galeri/\textit{query} juga menggunakan $N_G=3$ per identitas.
-\end{enumerate}
-
-Kedua dataset transfer domain (ZakynthosTurtles dan AmvrakikosTurtles) berasal dari populasi geografis yang berbeda dari data pelatihan, sehingga hasil pada kedua dataset ini mencerminkan kemampuan model beradaptasi terhadap variasi morfologi dan kondisi pencitraan di luar domain pelatihan.
-
-\subsection{Protokol Evaluasi Data Luar}
-
-Protokol evaluasi mengikuti prosedur yang sama dengan Subbab 4.2.2, dengan penyesuaian berikut:
+Pengujian dilakukan mengikuti alur berikut:
 
 \begin{enumerate}
-    \item Model yang digunakan adalah \textit{checkpoint} terbaik dari konfigurasi kombinasi optimal (Subbab 4.4.9), tanpa pelatihan ulang atau \textit{fine-tuning} tambahan pada dataset eksternal (evaluasi \textit{zero-shot cross-dataset}).
-    \item Pada setiap dataset eksternal, dihitung metrik \textit{Rank-1}, \textit{Rank-5}, \textit{Rank-10}, dan mAP menggunakan \textit{cosine similarity} murni dan \textit{k-reciprocal re-ranking} ($k_1=20$, $k_2=6$, $\lambda_{\text{rr}}=0{,}3$), sama seperti protokol pada data \textit{in-distribution}.
-    \item Hasil pada SeaTurtleIDHeads (Tabel~\ref{tab:optimal_combo}) diperlakukan sebagai batas atas (\textit{upper bound}) performa, karena distribusi datanya paling dekat dengan data pelatihan.
+    \item \textbf{Pemilihan identitas.} Sebanyak 20 identitas penyu dipilih secara acak dari dataset SeaTurtleID2022 untuk dijadikan galeri (\textit{registered identities}).
+    \item \textbf{Pra-pemrosesan citra.} Setiap citra dari identitas tersebut di-\textit{crop} agar hanya menampilkan area kepala penyu, konsisten dengan preprocessing yang digunakan pada dataset SeaTurtleIDHeads selama pelatihan.
+    \item \textbf{Pembentukan galeri.} Untuk setiap identitas, 3 citra dipilih secara acak sebagai citra galeri (\textit{gallery}); sisa citra pada identitas tersebut digunakan sebagai citra \textit{query}. Galeri disusun dalam struktur folder per identitas (\texttt{gallery\_root/<identity>/<image>.jpg}), lalu setiap citra galeri diembed dan di-\textit{mean-pool} per identitas menjadi satu vektor representatif, mengikuti protokol evaluasi yang sama dengan notebook pelatihan.
+    \item \textbf{Ekstraksi embedding.} Setiap citra (galeri maupun \textit{query}) diembed menggunakan backbone ViT-B/16 DINOv3 hasil pelatihan, dengan \textit{test-time augmentation} (TTA) berupa rata-rata dari 6 varian tampilan: \textit{resize} polos, \textit{resize}+\textit{center crop}, \textit{horizontal flip}, \textit{resize} besar+\textit{center crop}, \textit{color jitter}, dan rotasi ringan.
+    \item \textbf{Identifikasi (retrieval).} Setiap citra \textit{query} dibandingkan terhadap seluruh vektor galeri menggunakan \textit{cosine similarity}, dengan opsi \textit{k-reciprocal re-ranking} ($k_1=20$, $k_2=6$, $\lambda_{\text{rr}}=0{.}3$) untuk menghasilkan daftar top-$k$ kandidat identitas beserta skor kemiripannya. Pada tahap ini seluruh \textit{query} diasumsikan pasti memiliki pasangan identitas di galeri (\textit{closed-set}).
+    \item \textbf{Perkenalan identitas baru (open-set).} Untuk menguji ketahanan sistem terhadap individu yang belum pernah didaftarkan, ditambahkan 10 identitas lain yang sengaja \textbf{tidak} dimasukkan ke dalam galeri (\textit{unregistered identities}), dan seluruh citranya dijadikan \textit{query} tambahan. Apabila identitas baru ini dikenalkan ke sistem, maka \textit{query} tersebut seharusnya tidak dicocokkan ke identitas manapun pada galeri, melainkan ditandai sebagai \textbf{Unregistered}.
+    \item \textbf{Penentuan status terdaftar/tidak terdaftar.} Skor kemiripan \textit{top-1} dibandingkan terhadap sebuah \textit{threshold} (\texttt{UNREG\_THRESHOLD}); jika di bawah \textit{threshold}, \textit{query} diberi label \textbf{Unregistered}. \textit{Threshold} dipilih secara otomatis dengan memaksimalkan Youden's J ($\mathit{TPR}-\mathit{FPR}$) menggunakan citra \textit{query} dari 10 identitas tidak terdaftar sebagai \textit{ground truth}.
+    \item \textbf{Inspeksi hasil.} Hasil identifikasi divisualisasikan berdampingan antara citra \textit{query} dan top-$k$ citra galeri hasil pencocokan, untuk memeriksa secara kualitatif apakah identitas yang diprediksi model sesuai dengan identitas sebenarnya, baik untuk kasus \textit{registered} maupun \textit{unregistered}.
 \end{enumerate}
 
-\subsection{Hasil Pengujian Data Luar}
+\subsection{Hasil Pengujian}
 
-Tabel~\ref{tab:external_results} menyajikan hasil evaluasi konfigurasi kombinasi optimal pada ketiga dataset eksternal, dibandingkan dengan hasil pada data \textit{in-distribution} SeaTurtleIDHeads sebagai acuan pembanding.
+\subsubsection{Retrieval pada Identitas Terdaftar (Closed-Set)}
+
+Pengujian \textit{cross-dataset} ini awalnya hanya menggunakan \textit{registered identities} saja, yaitu 20 identitas yang telah didaftarkan ke galeri, tanpa memperhitungkan kemungkinan adanya individu tak dikenal. Tabel~\ref{tab:crossdataset_retrieval_only} menyajikan hasil \textit{retrieval} murni pada 219 \textit{query} dari identitas terdaftar tersebut.
 
 \begin{table}[H]
 \centering
-\caption{Hasil evaluasi konfigurasi kombinasi optimal pada dataset pengujian eksternal (+Re-rank)}
-\label{tab:external_results}
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{lcccc}
+\caption{Performa retrieval pada 219 query dari identitas terdaftar (closed-set)}
+\label{tab:crossdataset_retrieval_only}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lc}
 \hline
-\textbf{Dataset} & \textbf{Rank-1 (\%)} & \textbf{Rank-5 (\%)} & \textbf{Rank-10 (\%)} & \textbf{mAP (\%)} \\
+\textbf{Metrik} & \textbf{Nilai} \\
 \hline
-SeaTurtleIDHeads (\textit{in-distribution}) & 86.6\% & 95.5\% & 97.4\% & 90.5\% \\
-SeaTurtleID2022 (\textit{cross-dataset})    & [XX{,}X\%] & [XX{,}X\%] & [XX{,}X\%] & [XX{,}X\%] \\
-ZakynthosTurtles (\textit{transfer domain}) & [XX{,}X\%] & [XX{,}X\%] & [XX{,}X\%] & [XX{,}X\%] \\
-AmvrakikosTurtles (\textit{transfer domain}) & [XX{,}X\%] & [XX{,}X\%] & [XX{,}X\%] & [XX{,}X\%] \\
+Jumlah identitas terdaftar (galeri) & 20 \\
+Citra galeri per identitas ($N_G$) & 3 \\
+Jumlah \textit{query} & 219 \\
+Rank-1 & 81.7\% \\
+Rank-2 & 93.2\% \\
+Rank-3 & 96.8\% \\
+Rank-4 & 97.3\% \\
+Rank-5 & 97.3\% \\
+MRR    & 0{.}888 \\
 \hline
-\multicolumn{5}{l}{\footnotesize \textit{Catatan: nilai [XX{,}X\%] merupakan placeholder --- isi dengan hasil eksperimen aktual.}} \\
 \end{tabular}
 \end{table}
 
-\textit{(Catatan bagi penulis: tabel di atas menggunakan nilai placeholder karena hasil eksperimen pada ketiga dataset eksternal belum tersedia dalam dokumen ini. Jalankan skrip evaluasi pada masing-masing dataset menggunakan checkpoint konfigurasi kombinasi optimal, lalu ganti nilai placeholder dengan hasil aktual sebelum bab ini difinalisasi.)}
+\textbf{Analisis:} Pada kondisi \textit{closed-set} ini, model mencapai Rank-1 81.7\%, Rank-5 97.3\%, dan MRR 0.888 — bahkan sedikit lebih tinggi dibandingkan Rank-1 pada dataset \textit{in-distribution} SeaTurtleIDHeads (78.0\%, Tabel~\ref{tab:baseline_results}). Hal ini menunjukkan kemampuan \textit{ranking}/\textit{retrieval} model tetap sangat baik dan tergeneralisasi dengan baik ke dataset SeaTurtleID2022. Perlu dicatat bahwa kedua angka tersebut tidak sepenuhnya \textit{apple-to-apple}: galeri pada pengujian ini hanya berisi 20 identitas, jauh lebih sedikit dibandingkan jumlah identitas pada galeri data uji SeaTurtleIDHeads. Semakin sedikit jumlah identitas kandidat (\textit{distractor}) di dalam galeri, semakin kecil pula peluang \textit{query} salah tercocokkan dengan identitas lain yang mirip, sehingga tugas \textit{retrieval} menjadi relatif lebih mudah dan skor Rank-1 cenderung lebih tinggi — pola yang sejalan dengan temuan pada pengujian $N_G$ (Tabel~\ref{tab:var_ngallery}), di mana ukuran ruang pencarian galeri turut memengaruhi tingkat kesulitan \textit{retrieval}. Dengan demikian, angka 81.7\% ini sebaiknya dibaca sebagai indikasi bahwa \textit{embedding} model tetap diskriminatif dan dapat diandalkan pada dataset baru, bukan sebagai bukti bahwa performa model pada SeaTurtleID2022 "lebih baik" secara \textit{apple-to-apple} dibandingkan performa pada SeaTurtleIDHeads.
 
-\subsection{Analisis Hasil Data Luar}
+\subsubsection{Perkenalan Identitas Baru (Open-Set)}
 
-Beberapa hal yang perlu diperiksa dan dianalisis setelah nilai aktual pada Tabel~\ref{tab:external_results} tersedia:
+Pengujian di atas mengasumsikan seluruh \textit{query} pasti memiliki identitas yang terdaftar di galeri. Pada kondisi nyata, sistem dapat menerima citra dari individu yang belum pernah didaftarkan sama sekali. Untuk menguji skenario ini, diperkenalkan 10 identitas baru yang sengaja tidak dimasukkan ke galeri, sehingga total \textit{query} bertambah menjadi 268 (219 \textit{registered} + 49 \textit{unregistered}). Tabel~\ref{tab:crossdataset_seaturtleid2022} merangkum hasilnya.
+
+\begin{table}[H]
+\centering
+\caption{Hasil pengujian \textit{open-set} pada SeaTurtleID2022 (20 identitas terdaftar, 10 identitas tidak terdaftar)}
+\label{tab:crossdataset_seaturtleid2022}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{ll}
+\hline
+\textbf{Keterangan} & \textbf{Nilai} \\
+\hline
+Jumlah identitas terdaftar (galeri) & 20 \\
+Citra galeri per identitas ($N_G$) & 3 \\
+Jumlah identitas tidak terdaftar (baru) & 10 \\
+\textit{Unregistered threshold} (otomatis, maks. Youden's J) & 0{.}9122 \\
+Jumlah citra \textit{query} & 268 (terdaftar=219, tidak terdaftar=49) \\
+Akurasi \textit{open-set} & 63.8\% \\
+\textit{Registered} Rank-1 & 56.2\% \\
+\textit{False-reject rate} (terdaftar salah ditandai \textit{Unregistered}) & 42.9\% \\
+\textit{Unregistered recall} (benar ditandai \textit{Unregistered}) & 98.0\% \\
+\textit{False-accept rate} (tidak terdaftar tercocokkan ke suatu identitas) & 2.0\% \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Analisis:} Setelah 10 identitas baru diperkenalkan dan sistem dipaksa membedakan individu terdaftar dari yang tidak terdaftar, \textit{Registered} Rank-1 turun cukup jauh menjadi 56.2\%, jauh di bawah hasil \textit{retrieval} murni pada Tabel~\ref{tab:crossdataset_retrieval_only} (81.7\%) maupun Rank-1 pada dataset \textit{in-distribution} SeaTurtleIDHeads (78.0\%). Penurunan ini \textbf{bukan} disebabkan oleh menurunnya kualitas \textit{embedding} atau \textit{domain gap} pada level fitur — sebagaimana telah ditunjukkan pada subbagian sebelumnya, kemampuan \textit{ranking} model terhadap identitas terdaftar sesungguhnya tetap sangat baik. Penurunan ini murni disebabkan oleh mekanisme \textit{threshold gating} pada tahap deteksi \textit{open-set}: banyak \textit{query} dari identitas yang sebenarnya terdaftar justru salah ditandai sebagai \textbf{Unregistered} sebelum sempat dibandingkan peringkatnya, sebagaimana tercermin dari \textit{false-reject rate} yang mencapai 42.9\%.
+
+Di sisi lain, model menunjukkan \textit{unregistered recall} yang sangat tinggi (98.0\%) dengan \textit{false-accept rate} yang sangat rendah (2.0\%), artinya hampir seluruh identitas baru yang diperkenalkan berhasil dikenali sebagai individu tak dikenal. Sifat ini menguntungkan untuk skenario pemantauan populasi di lapangan, karena sistem jarang salah mengenali penyu baru sebagai individu yang sudah dikenal. Namun perlu digarisbawahi bahwa \textit{false-reject rate} yang tinggi (42.9\%) bukan disebabkan oleh \textit{threshold} 0.9122 itu sendiri sebagai akar masalah, melainkan merupakan \textbf{konsekuensi} dari akar masalah yang sesungguhnya: skor \textit{cosine similarity top-1} milik \textit{query unregistered} ternyata tetap tinggi dan \textbf{bertumpuk} (\textit{overlap}) dengan sebaran skor milik \textit{query registered} yang benar-benar cocok. Karena kandidat "paling mirip" dari 10 identitas tak dikenal terhadap 20 identitas galeri masih menghasilkan skor kemiripan yang cukup tinggi, satu-satunya cara agar \textit{threshold} dapat menangkap sebagian besar \textit{unregistered} ini (\textit{unregistered recall} 98.0\%) adalah dengan menariknya ke titik yang sangat tinggi (0.9122) — dan pada titik setinggi itu, banyak \textit{query registered} yang skornya juga ikut terpotong meskipun identitasnya benar-benar valid. Dengan kata lain, \textit{threshold} tinggi adalah \textbf{gejala}, sedangkan tumpang-tindihnya distribusi skor \textit{registered} dan \textit{unregistered} adalah \textbf{akar masalah} yang sebenarnya perlu dijelaskan.
+
+Akar penyebab tumpang tindihnya distribusi skor tersebut bukan terletak pada paradigma pelatihan model. Model re-identifikasi ini dilatih dengan ArcFace dan Triplet Loss dalam skema \textit{metric learning}, yang secara desain sudah bersifat \textit{open-set}: model tidak belajar sebagai \textit{classifier} dengan kelas identitas tetap, melainkan belajar membentuk ruang \textit{embedding} umum di mana kemiripan dua citra diukur langsung lewat jarak/\textit{cosine similarity}. Protokol evaluasi baku pada Tabel~\ref{tab:baseline_results} pun sudah menggunakan identitas yang sama sekali tidak dilihat model selama pelatihan, sehingga kapasitas untuk menilai kemiripan terhadap identitas baru sesungguhnya sudah melekat pada arsitektur ini. Penurunan performa pada pengujian \textit{open-set} SeaTurtleID2022 lebih disebabkan oleh beberapa faktor berikut:
 
 \begin{itemize}
-    \item \textbf{Selisih performa terhadap \textit{in-distribution}.} Bandingkan penurunan Rank-1 dan mAP pada tiap dataset eksternal terhadap hasil SeaTurtleIDHeads. Selisih yang kecil mengindikasikan representasi fitur cukup general, sedangkan selisih besar mengindikasikan model masih \textit{overfit} terhadap karakteristik visual data pelatihan.
-    \item \textbf{Perbandingan SeaTurtleID2022 vs. dataset transfer domain.} Karena SeaTurtleID2022 masih berasal dari populasi yang berkerabat dekat dengan data pelatihan, performa pada dataset ini idealnya lebih tinggi dibandingkan ZakynthosTurtles dan AmvrakikosTurtles yang berasal dari populasi geografis berbeda (Mediterania).
-    \item \textbf{Konsistensi antar dua dataset transfer domain.} Jika performa ZakynthosTurtles dan AmvrakikosTurtles berbeda cukup jauh meskipun keduanya sama-sama penyu Mediterania, hal ini dapat mengindikasikan adanya perbedaan kondisi pencitraan (pencahayaan, sudut kamera, kualitas citra) antar lokasi pengambilan data yang memengaruhi performa re-identifikasi.
-    \item \textbf{Kontribusi re-ranking pada domain baru.} Perlu diperiksa apakah \textit{k-reciprocal re-ranking} tetap memberikan peningkatan performa yang konsisten pada dataset eksternal, atau justru berkurang efektivitasnya karena struktur tetangga pada ruang embedding domain baru berbeda dari domain pelatihan.
+    \item \textbf{Skor \textit{top-1} \textit{unregistered} secara intrinsik tinggi akibat kemiripan morfologi antar-individu.} \textit{Query unregistered} tetap dibandingkan terhadap seluruh 20 identitas di galeri dan selalu menghasilkan satu kandidat "paling mirip" — sekecil apa pun kemiripannya, skor \textit{top-1} tidak pernah nol. Karena citra yang digunakan sudah di-\textit{crop} hanya pada area kepala, kemiripan bentuk kepala, pola sisik, dan warna antar-individu penyu yang berbeda pun bisa cukup tinggi secara visual (kemiripan pada level spesies/morfologi umum), sehingga kandidat "paling mirip" tersebut dapat memperoleh skor \textit{cosine similarity} yang mendekati skor pasangan yang benar-benar valid. Inilah yang membuat sebaran skor \textit{top-1 registered} dan \textit{unregistered} bertumpuk, dan bukan semata soal galeri yang kecil atau tidak adanya \textit{distractor} — pengujian \textit{retrieval} murni (Tabel~\ref{tab:crossdataset_retrieval_only}) justru menunjukkan galeri 20 identitas ini sudah cukup untuk membedakan pasangan yang benar-benar valid (Rank-1 81.7\%). Masalahnya lebih spesifik pada kasus \textit{tidak ada pasangan valid sama sekali}, di mana kandidat terdekat yang salah tetap bisa mendapat skor tinggi.
+    \item \textbf{Tidak pernah dikalibrasi terhadap \textit{query} tanpa pasangan (\textit{distractor query}).} Baik selama pelatihan maupun pada protokol evaluasi baku (Tabel~\ref{tab:baseline_results}), setiap citra \textit{query} yang dievaluasi selalu memiliki identitas yang cocok di galeri — tidak pernah ada \textit{query} yang sengaja tidak punya pasangan (\textit{distractor query}/\textit{no-match query}). Perlu ditekankan, ini berbeda dengan \textit{distractor} pada sisi galeri (gambar-gambar identitas lain yang bukan pasangan suatu \textit{query}), yang justru sudah lazim ada dalam setiap evaluasi \textit{retrieval} dan terbukti tidak menjadi masalah, sebagaimana ditunjukkan Rank-1 \textit{retrieval} murni yang tetap tinggi (81.7\%, Tabel~\ref{tab:crossdataset_retrieval_only}). Karena mekanisme penolakan (\textit{rejection}) berbasis \textit{threshold} tidak pernah divalidasi terhadap skenario "tidak ada yang cocok sama sekali" sebelumnya, sistem tidak memiliki acuan untuk mengetahui seberapa tinggi skor \textit{top-1} yang wajar dimiliki oleh kandidat yang \textbf{salah} pada domain baru.
+    \item \textbf{\textit{Domain shift} pada skala skor kemiripan.} \textit{Threshold} \texttt{UNREG\_THRESHOLD} bersifat global dan diterapkan langsung pada skor \textit{cosine similarity} mentah. Ketika model dievaluasi pada dataset di luar distribusi pelatihannya (SeaTurtleID2022), sebaran skor kemiripan — baik untuk pasangan citra identitas yang sama maupun berbeda — bergeser dibandingkan sebaran pada domain SeaTurtleIDHeads tempat karakteristik \textit{threshold} biasanya dikalibrasi, sehingga memperbesar tumpang tindih antara skor \textit{registered} dan \textit{unregistered}.
+    \item \textbf{Prototipe galeri yang kurang stabil.} Representasi galeri per identitas hanya dibentuk dari \textit{mean-pooling} 3 citra ($N_G=3$), jauh lebih sedikit dibandingkan jumlah citra pelatihan per identitas. Prototipe yang dibangun dari sedikit sampel lebih rentan terhadap variasi pose, sudut, dan pencahayaan pada citra \textit{query}, sehingga meningkatkan varians skor kemiripan dan memperbesar tumpang tindih antara distribusi \textit{registered} dan \textit{unregistered}.
+    \item \textbf{Kalibrasi \textit{threshold} pada sampel kecil dan bersifat \textit{post-hoc}.} \textit{Threshold} 0.9122 dipilih dengan memaksimalkan Youden's J langsung pada 49 citra \textit{query unregistered} dari hanya 10 identitas pada pengujian ini. Sampel sebesar ini rentan terhadap \textit{noise} statistik, sehingga nilai \textit{threshold} yang dihasilkan bisa jadi optimal untuk sampel spesifik ini namun tidak merepresentasikan \textit{decision boundary} yang stabil dan dapat digeneralisasi ke populasi \textit{unregistered} yang lebih luas.
 \end{itemize}
+
+Kelima faktor di atas — skor \textit{top-1 unregistered} yang secara intrinsik tinggi akibat kemiripan morfologi antar-individu, tidak pernah adanya kalibrasi terhadap \textit{query} tanpa pasangan, pergeseran skala skor akibat domain baru, prototipe galeri yang lebih rapuh, dan \textit{threshold} tunggal yang dikalibrasi pada sampel kecil — bersama-sama menjelaskan mengapa skor \textit{registered} dan \textit{unregistered} bertumpuk, sehingga \textit{threshold} setinggi apa pun akan tetap menghasilkan \textit{false-reject rate} yang besar (42.9\%) selama sistem dipaksa mempertahankan \textit{unregistered recall} yang tinggi, meskipun kemampuan \textit{ranking} model itu sendiri, sebagaimana ditunjukkan pada Tabel~\ref{tab:crossdataset_retrieval_only}, tetap baik.
+
+Akurasi \textit{open-set} keseluruhan sebesar 63.8\% mencerminkan keseimbangan antara kedua jenis kesalahan tersebut, dan menunjukkan bahwa strategi pemilihan \textit{threshold} perlu disesuaikan dengan prioritas aplikasi (mis. menoleransi lebih banyak \textit{false-reject} demi keamanan, atau sebaliknya) apabila sistem hendak diterapkan pada dataset di luar domain pelatihannya. Secara keseluruhan, pengujian ini menegaskan bahwa permasalahan utama pada skenario \textit{cross-dataset} bukan terletak pada kapasitas diskriminatif model re-identifikasi itu sendiri, melainkan pada kalibrasi mekanisme deteksi \textit{unregistered} yang belum pernah dilatih secara eksplisit.
+
+\subsubsection{Deteksi Unregistered dengan Background Class pada Galeri}
+
+Pendekatan deteksi \textit{unregistered} pada subbagian sebelumnya bersifat \textit{post-hoc}: sebuah \textit{threshold} tunggal diterapkan pada skor \textit{cosine similarity top-1} terhadap 20 identitas galeri, terlepas dari proses \textit{retrieval} itu sendiri. Sebagai pendekatan alternatif, dilakukan pengujian dengan menambahkan sebuah \textbf{\textit{background class}} langsung ke dalam galeri, sehingga mekanisme penolakan \textit{unregistered} menjadi bagian dari proses \textit{retrieval} (kompetisi antar kandidat), bukan tahap terpisah setelahnya.
+
+Prosedur pengujian ini mengikuti alur berikut:
+
+\begin{enumerate}
+    \item \textbf{Pembentukan prototipe \textit{background}.} Sejumlah citra yang bukan berasal dari 20 identitas terdaftar dikumpulkan untuk merepresentasikan kelas \textit{background}/\textit{unknown}. Setiap citra diembed dengan skema TTA yang sama seperti citra galeri lain, kemudian seluruh \textit{embedding} tersebut di-\textit{mean-pool} menjadi satu vektor prototipe tunggal yang mewakili kelas \textit{background}.
+    \item \textbf{Penambahan ke galeri.} Vektor prototipe \textit{background} dimasukkan ke dalam galeri sebagai entri ke-21, sejajar dengan 20 prototipe identitas terdaftar, sehingga galeri kini berisi 21 \textit{class}: 20 identitas asli ditambah 1 kelas \textit{background}.
+    \item \textbf{Identifikasi.} Setiap citra \textit{query} (baik dari identitas terdaftar maupun tidak terdaftar) diidentifikasi dengan cara yang sama seperti sebelumnya, yaitu mencari kandidat dengan skor \textit{cosine similarity} (dengan opsi \textit{k-reciprocal re-ranking}) tertinggi di antara ke-21 \textit{class} pada galeri.
+    \item \textbf{Penentuan status terdaftar/tidak terdaftar.} Jika kandidat \textit{top-1} adalah kelas \textit{background}, \textit{query} diklasifikasikan sebagai \textbf{Unregistered}; jika kandidat \textit{top-1} adalah salah satu dari 20 identitas asli, \textit{query} diklasifikasikan sebagai \textbf{Registered} dengan prediksi identitas tersebut. Pendekatan ini tidak lagi memerlukan kalibrasi \textit{threshold} terpisah (\texttt{UNREG\_THRESHOLD}), karena keputusan registered/unregistered langsung merupakan hasil kompetisi \textit{retrieval} itu sendiri.
+    \item \textbf{Evaluasi.} Metrik yang sama seperti pengujian \textit{open-set} sebelumnya (akurasi \textit{open-set}, \textit{Registered} Rank-1, \textit{false-reject rate}, \textit{unregistered recall}, \textit{false-accept rate}) dihitung ulang pada skema galeri baru ini, untuk dibandingkan dengan pendekatan berbasis \textit{threshold} tunggal pada Tabel~\ref{tab:crossdataset_seaturtleid2022}.
+\end{enumerate}
+
+Tabel~\ref{tab:crossdataset_background_class} menyajikan hasil pengujian dengan skema \textit{background class} ini.
+
+\begin{table}[H]
+\centering
+\caption{Hasil pengujian open-set dengan penambahan background class pada galeri}
+\label{tab:crossdataset_background_class}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{ll}
+\hline
+\textbf{Keterangan} & \textbf{Nilai} \\
+\hline
+Jumlah identitas terdaftar (galeri) & 20 \\
+Citra galeri per identitas ($N_G$) & 3 \\
+Jumlah entri \textit{background class} pada galeri & 1 \\
+Jumlah identitas tidak terdaftar (query) & 10 \\
+Jumlah citra \textit{query} & 268 (terdaftar=219, tidak terdaftar=49) \\
+Akurasi \textit{open-set} & --- \\
+\textit{Registered} Rank-1 & --- \\
+\textit{False-reject rate} & --- \\
+\textit{Unregistered recall} & --- \\
+\textit{False-accept rate} & --- \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Analisis:} \textit{(isi setelah notebook dengan skema background class dijalankan dan hasil evaluasinya diperoleh, lalu bandingkan dengan Tabel~\ref{tab:crossdataset_seaturtleid2022} untuk menilai apakah pendekatan background class mengurangi false-reject rate dibandingkan pendekatan threshold tunggal)}
