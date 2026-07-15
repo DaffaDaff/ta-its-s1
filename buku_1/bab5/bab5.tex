@@ -1,15 +1,63 @@
 \chapter{PENUTUP}
-\label{sec:chap5_tutup}
-\vspace{1ex}
-\section*{}
-Setelah penerapan metode terhadap masalah yang ingin diselesaikan pada \vspace{1ex}
 
 \section{Kesimpulan}
-\label{sec:sec4_kesimpulan}
-\vspace{1ex}
-\lipsum[1]
-\section{Saran}
-\label{sec:sec4_saran}
-\vspace{1ex}
-\lipsum[2]
 
+Model re-identifikasi penyu berbasis \textit{backbone} Vision Transformer pra-latih DINOv3
+dengan pendekatan \textit{metric learning} mampu mengenali individu penyu dari pola kepalanya pada
+skenario \textit{open-set}. Konfigurasi acuan memperoleh Rank-1 sebesar 78,3\% dan mAP sebesar
+84,9\%, sedangkan konfigurasi kombinasi memperoleh Rank-1 sebesar 90,4\% dan mAP sebesar 93,5\%.
+Penerapan \textit{k-reciprocal re-ranking} hanya menambah 0,9 hingga 1,3 poin persentase. Sebagian
+besar kegagalan berupa kesalahan pengurutan pada peringkat teratas, bukan kegagalan menemukan
+identitas yang benar. Kegagalan tersebut umumnya terjadi pada citra yang buram dan berkontras
+rendah.
+
+Model mampu bergeneralisasi ke data dengan kondisi pengambilan citra yang berbeda. Tanpa
+pelatihan ulang, model memperoleh Rank-1 sebesar 81,1\% dan Rank-5 sebesar 97,2\% pada dataset
+SeaTurtleID2022. Performanya turun 9,3 poin persentase dari hasil \textit{in-distribution}.
+Protokol inferensi pada kedua pengujian identik, sehingga penurunan tersebut murni bersumber dari
+pergantian domain. Dengan demikian, generalisasi model disertai biaya performa yang terukur dan
+tidak katastrofik.
+
+Penanganan identitas tidak terdaftar merupakan keterbatasan utama sistem. Nilai Registered
+Rank-1 turun menjadi 55,3\% pada skema \textit{threshold} global dan 56,7\% pada skema
+\textit{background class}, dengan \textit{false-reject rate} sekitar 42\%. Aturan keputusan kedua
+skema berbeda secara fundamental, tetapi keduanya bermuara pada titik operasi yang nyaris sama.
+Penyebabnya terletak pada distribusi skor. Seluruh skor \textit{top-1} terkurung dalam pita sempit
+0,85 hingga 0,98, dan distribusi \textit{unregistered} tertanam di dalam distribusi
+\textit{registered}, sehingga separabilitasnya hanya moderat dengan ROC-AUC 0,77 hingga 0,79.
+Meskipun demikian, identitas yang benar tetap berada pada lima kandidat teratas bahkan pada kasus
+kegagalan terparah. Keterbatasan sistem karenanya bersumber dari mekanisme keputusan dan kalibrasi
+skor, bukan dari kualitas \textit{embedding}.
+
+
+\section{Saran}
+
+Berdasarkan keterbatasan yang teridentifikasi, terdapat beberapa saran yang dapat dipertimbangkan
+untuk penelitian selanjutnya, yaitu sebagai berikut.
+
+\begin{enumerate}
+
+    \item Pendekatan \textit{one-factor-at-a-time} perlu didukung dengan rancangan faktorial atau
+          ablasi mundur dari konfigurasi kombinasi. Sub-aditivitas yang terbukti pada Subbab 4.4.7
+          menunjukkan bahwa penggabungan seluruh nilai terbaik tidak menjamin tercapainya optimum.
+
+    \item Eksperimen perlu dijalankan menggunakan beberapa \textit{seed} yang berbeda. Seluruh hasil
+          pada penelitian ini berasal dari satu \textit{seed} tunggal. Akibatnya, parameter dengan rentang
+          di bawah 2 poin persentase tidak dapat disimpulkan tanpa estimasi variansi antar-\textit{seed}.
+          Pelaporan dalam bentuk rata-rata dan simpangan baku akan memisahkan efek yang nyata dari
+          fluktuasi acak.
+
+    \item Penyetelan ambang penolakan perlu dilakukan pada himpunan validasi yang
+          terpisah dari himpunan evaluasi. Jumlah identitas tidak terdaftar juga perlu
+          diperbesar.
+
+    \item Kemiripan antara profil kiri dan profil kanan penyu dapat dieksploitasi sebagaimana
+          diusulkan pada penelitian terdahulu. Pemanfaatannya berpotensi menambah jumlah data yang tersedia
+          untuk pencocokan tanpa memerlukan pengumpulan citra baru.
+
+    \item Tahap deteksi dan segmentasi kepala dapat diintegrasikan sehingga terbentuk
+          \textit{pipeline} \textit{end-to-end}. Penelitian ini mengasumsikan citra masukan telah
+          ter-\textit{crop} pada region kepala. Penggabungan tahap deteksi akan menghasilkan alur kerja yang
+          dapat langsung diterapkan pada foto lapangan mentah.
+
+\end{enumerate}
