@@ -99,9 +99,9 @@ Istilah \textit{in-distribution} pada bab ini merujuk pada kesamaan domain penga
 
 \subsection{Variabel Parameter yang Diuji}
 
-Penelitian ini menguji 19 parameter secara individual menggunakan pendekatan \textit{one-factor-at-a-time} (OFAT), yaitu satu parameter divariasikan sambil mempertahankan seluruh parameter lainnya pada nilai acuan. Pendekatan ini memungkinkan analisis kontribusi bersih dari setiap parameter terhadap performa sistem.
+Penelitian ini menguji 19 parameter secara individual menggunakan pendekatan \textit{one-factor-at-a-time} (OFAT), yaitu satu parameter divariasikan sambil mempertahankan seluruh parameter lainnya pada nilai acuan. Pendekatan ini memungkinkan analisis kontribusi bersih dari setiap parameter terhadap performa sistem. Nilai parameter yang diuji dijabarkan pada tabel \ref{tab:params}.
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Variabel parameter yang diuji}
     \label{tab:params}
@@ -150,7 +150,7 @@ Penelitian ini menguji 19 parameter secara individual menggunakan pendekatan \te
 
 Gambar~\ref{fig:training_curves} menampilkan kurva \textit{total loss} pelatihan dan metrik validasi (\textit{Rank-1} dan mAP) terhadap \textit{epoch}. Kurva tersebut diamati untuk memverifikasi tiga hal, yaitu (i) \textit{loss} menurun secara monoton tanpa lonjakan besar sebagai penanda pelatihan yang stabil, (ii) metrik validasi meningkat secara konsisten selama fase \textit{warmup} hingga \textit{cosine decay} aktif, dan (iii) tidak terdapat \textit{overfitting} yang signifikan, yaitu \textit{loss} validasi tidak meningkat drastis sementara \textit{loss} pelatihan terus menurun.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{bab3/reid_default/training_curves.png}
     \caption{Kurva pelatihan konfigurasi acuan: (kiri) \textit{total loss} per \textit{epoch}; (kanan) \textit{Rank-1} dan mAP pada data validasi setiap 5 \textit{epoch}.}
@@ -164,7 +164,7 @@ Ketiga kriteria tersebut terpenuhi pada konfigurasi acuan. \textit{Total loss} m
 
 Tabel~\ref{tab:baseline_results} menyajikan hasil evaluasi konfigurasi acuan pada dataset pengujian SeaTurtleIDHeads. Setiap metrik dilaporkan dua kali, yaitu menggunakan \textit{cosine similarity} murni (\textit{Cosine}) dan setelah \textit{k-reciprocal re-ranking} (\textit{+Re-rank}).
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Hasil evaluasi konfigurasi acuan pada dataset pengujian SeaTurtleIDHeads}
     \label{tab:baseline_results}
@@ -194,9 +194,9 @@ Berdasarkan hasil pada Tabel~\ref{tab:baseline_results}, beberapa observasi dapa
 
 Gambar~\ref{fig:tsne} menampilkan visualisasi t-SNE dari vektor \textit{embedding} 20 identitas teratas pada data pengujian \textit{in-distribution}. Pengelompokan (\textit{clustering}) yang baik di ruang t-SNE, yaitu titik-titik dari identitas yang sama berdekatan dan terpisah dari identitas lain, mengkonfirmasi bahwa model berhasil membangun ruang \textit{embedding} yang diskriminatif.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{bab4/tsne.png}
+    \includegraphics[width=0.9\textwidth]{bab4/tsne.png}
     \caption{Visualisasi t-SNE untuk 20 identitas penyu teratas pada data pengujian \textit{in-distribution}. Setiap warna mewakili satu identitas.}
     \label{fig:tsne}
 \end{figure}
@@ -206,7 +206,7 @@ Gambar~\ref{fig:tsne} menampilkan visualisasi t-SNE dari vektor \textit{embeddin
 
 Gambar~\ref{fig:query_retrieval} menampilkan hasil \textit{retrieval} lima peringkat teratas untuk beberapa \textit{query} pada data pengujian \textit{in-distribution}, lengkap dengan skor \textit{cosine similarity} masing-masing kandidat.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{bab4/query_retrieval.png}
     \caption{Hasil \textit{retrieval} lima peringkat teratas pada data pengujian \textit{in-distribution} SeaTurtleIDHeads. Kolom pertama adalah citra \textit{query}, kolom berikutnya adalah kandidat galeri terurut menurun berdasarkan \textit{cosine similarity}. Hijau menandai identitas yang benar, merah menandai identitas yang salah.}
@@ -609,7 +609,7 @@ Perbedaan performa antar nilai faktor peluruhan LR relatif kecil, dengan rentang
 
 Tabel~\ref{tab:sensitivity_summary} merangkum keseluruhan hasil OFAT dalam satu tampilan, diurutkan berdasarkan rentang Rank-1, yaitu selisih antara nilai tertinggi dan nilai terendah di antara seluruh nilai yang diuji untuk parameter tersebut. Rentang dipilih sebagai ukuran sensitivitas karena menangkap seberapa besar performa bergerak ketika parameter digeser, terlepas dari apakah nilai acuannya sudah optimal. Kolom $\Delta$ Rank-1 melengkapinya dengan potensi perbaikan yang tersedia, yaitu selisih antara nilai terbaik dan nilai acuan sebesar 78.3\%.
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Ringkasan sensitivitas parameter, diurutkan berdasarkan rentang Rank-1}
     \label{tab:sensitivity_summary}
@@ -660,7 +660,7 @@ Tabel tersebut memperlihatkan tiga pengelompokan parameter.
 
 Selain pengujian OFAT, dilakukan pengujian tambahan untuk memverifikasi apakah dampak parameter bersifat aditif, yaitu apakah penggabungan sejumlah nilai yang secara individual berdampak positif akan menghasilkan performa yang setara dengan penjumlahan kontribusinya. Konfigurasi kombinasi disusun dengan mengadopsi seluruh nilai terbaik pada Tabel~\ref{tab:sensitivity_summary} yang memberikan $\Delta$ Rank-1 positif. Tabel~\ref{tab:combo_config} menyajikan komposisinya terhadap konfigurasi acuan.
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Komposisi parameter konfigurasi kombinasi terhadap acuan}
     \label{tab:combo_config}
@@ -696,7 +696,7 @@ Selain pengujian OFAT, dilakukan pengujian tambahan untuk memverifikasi apakah d
 
 Tabel~\ref{tab:optimal_combo} membandingkan hasil kedua konfigurasi pada perhitungan \textit{cosine similarity} maupun \textit{re-ranking}.
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Perbandingan konfigurasi acuan dengan konfigurasi kombinasi}
     \label{tab:optimal_combo}
@@ -730,9 +730,9 @@ Hasil tersebut menunjukkan bahwa OFAT berguna untuk memetakan arah dan urutan ke
 
 Gambar~\ref{fig:tsne_kombinasi} menampilkan visualisasi t-SNE dari vektor \textit{embedding} konfigurasi kombinasi pada data pengujian yang sama dengan Gambar~\ref{fig:tsne}. Dibandingkan konfigurasi acuan, klaster antar-identitas pada konfigurasi kombinasi tampak lebih rapat secara \textit{intra-class} dan lebih terpisah secara \textit{inter-class}, sejalan dengan peningkatan Rank-1 dan mAP pada Tabel~\ref{tab:optimal_combo}. Hal ini mengkonfirmasi bahwa peningkatan metrik tersebut berakar pada ruang \textit{embedding} yang lebih diskriminatif, dan bukan sekadar merupakan artefak tahap \textit{retrieval}.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{bab4/tsne2.png}
+    \includegraphics[width=0.9\textwidth]{bab4/tsne2.png}
     \caption{Visualisasi t-SNE untuk 20 identitas penyu teratas pada data pengujian \textit{in-distribution} dengan konfigurasi kombinasi. Setiap warna mewakili satu identitas.}
     \label{fig:tsne_kombinasi}
 \end{figure}
@@ -862,7 +862,7 @@ pasti memiliki pasangan di galeri, yaitu tanpa individu tak terdaftar dan tanpa 
 penolakan. Hasilnya murni menguji apakah \textit{embedding} model tetap diskriminatif pada
 dataset baru.
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Performa retrieval murni pada query dari identitas terdaftar (tanpa penolakan)}
     \label{tab:crossdataset_retrieval_only}
@@ -891,9 +891,9 @@ evaluasi \textit{in-distribution}, selisih 9.3 poin persentase tersebut dapat
 diatribusikan pada pergantian domain semata. Hal ini membuktikan secara langsung bahwa
 \textit{embedding} DINOv3 hasil \textit{fine-tuning} tergeneralisasi lintas-dataset.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{bab4/tsne3.png}
+    \includegraphics[width=0.9\textwidth]{bab4/tsne3.png}
     \caption{Visualisasi t-SNE vektor \textit{embedding} pada identitas SeaTurtleID2022
         (lintas-dataset, tanpa pelatihan ulang). Bintang menandai prototipe galeri hasil
         \textit{mean-pooling} $N_G=3$ citra, lingkaran menandai citra \textit{query}.
@@ -926,7 +926,7 @@ penambahan 5 identitas \textit{unregistered}, total \textit{query} menjadi 266, 
 \textit{registered} dan 49 \textit{unregistered}, dan sistem harus menolak \textit{query}
 yang tak terdaftar menggunakan \textit{threshold} global.
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Hasil identifikasi dengan penolakan pada SeaTurtleID2022 memakai threshold global (25 identitas terdaftar, 5 identitas tidak terdaftar)}
     \label{tab:crossdataset_seaturtleid2022}
@@ -957,7 +957,7 @@ ditempatkan sebelum proses \textit{ranking}. Sumbernya terbaca jelas dari FRR se
 43.4\%, yaitu hampir separuh \textit{query} yang sebenarnya terdaftar ditolak sebagai
 \textit{Unregistered} sebelum sempat diperingkat.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{bab4/score_dist_threshold.png}
     \caption{Distribusi skor \textit{top-1 cosine similarity} terhadap galeri untuk
@@ -1021,7 +1021,7 @@ penolakan dijadikan bagian dari kompetisi \textit{retrieval} itu sendiri melalui
 \textit{background} mengungguli kandidat galeri terbaiknya
 ($s = s_{\text{reg}} - s_{\text{bg}} < \textit{margin}$).
 
-\begin{table}[H]
+\begin{table}[htbp]
     \centering
     \caption{Hasil identifikasi dengan penolakan memakai penambahan background class pada galeri}
     \label{tab:crossdataset_background_class}
@@ -1064,7 +1064,7 @@ terdaftar yang lolos, akurasi \textit{retrieval} mencapai $0{.}567/(1-0{.}419) \
 Kedua mekanisme penolakan sama-sama ketat, sehingga sama-sama menyingkirkan kasus sulit
 terlebih dahulu dan menyisakan subset \textit{query} yang relatif mudah.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\textwidth]{bab4/score_dist_background.png}
     \caption{Ruang keputusan \textit{background class} pada SeaTurtleID2022. Sumbu
@@ -1102,7 +1102,7 @@ keputusan paling keliru dan lima keputusan paling tepat pada skema
 \textit{background class}, lengkap dengan lima kandidat galeri teratas beserta skor
 \textit{cosine}-nya.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{bab4/cross_query_bottom.png}
     \caption{Lima keputusan paling keliru pada skema \textit{background class}
@@ -1113,7 +1113,7 @@ keputusan paling keliru dan lima keputusan paling tepat pada skema
     \label{fig:cross_query_bottom}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{bab4/cross_query_top.png}
     \caption{Lima keputusan paling tepat pada skema \textit{background class}

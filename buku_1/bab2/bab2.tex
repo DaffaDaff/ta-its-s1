@@ -59,8 +59,111 @@ Dari perspektif ekologis, kemampuan melacak individu secara akurat dan berkesina
  
 % Tantangan utama dalam Re-ID satwa liar dibandingkan dengan Re-ID manusia mencakup: (1) variasi pose yang ekstrem akibat pergerakan hewan yang bebas dan tidak terkontrol; (2) kondisi pencahayaan dan latar belakang yang sangat bervariasi bergantung pada habitat dan waktu pengambilan foto; (3) keterbatasan data mengingat setiap individu hewan mungkin hanya terekam dalam sejumlah kecil foto sepanjang program pemantauan; serta (4) kebutuhan generalisasi terhadap spesies, populasi, atau lokasi geografis baru yang tidak tercakup dalam dataset pelatihan \cite{cermak2024wildlifedatasets}. Tantangan terakhir yang dikenal sebagai \textit{cross-domain generalization} menjadi fokus khusus dalam penelitian ini, di mana model yang dilatih pada satu populasi penyu harus mampu diuji pada populasi yang berbeda secara geografis.
 
+\subsection{Taksonomi dan Karakteristik Penyu Loggerhead}
+\label{subsec:taksonomi-penyu}
+
+
+Penyu laut (ordo Testudines, subordo Cryptodira) merupakan reptil akuatik yang
+terbagi ke dalam dua famili, yaitu Cheloniidae dan Dermochelyidae, dengan total
+tujuh spesies yang masih bertahan hidup di seluruh dunia. Indonesia menjadi
+salah satu habitat terpenting bagi penyu laut karena enam dari tujuh spesies
+tersebut, yaitu penyu hijau (\textit{Chelonia mydas}), penyu sisik
+(\textit{Eretmochelys imbricata}), penyu lekang (\textit{Lepidochelys
+olivacea}), penyu belimbing (\textit{Dermochelys coriacea}), penyu pipih
+(\textit{Natator depressus}), dan penyu loggerhead (\textit{Caretta caretta}),
+diketahui hidup di perairannya \cite{ario2016}.
+
+Penelitian ini secara spesifik menggunakan citra penyu loggerhead
+(\textit{Caretta caretta}), sebagaimana spesies yang dicakup oleh dataset
+SeaTurtleIDHeads dan SeaTurtleID2022 yang dikumpulkan di perairan kepulauan
+Yunani \cite{adam2023seaturtle}.
+
+\subsubsection{Karakteristik Fisiologis Kepala dan Sisik}
+
+Secara fisiologis, penyu loggerhead dicirikan oleh kepala yang berukuran besar
+secara proporsional terhadap tubuhnya dibandingkan spesies penyu lain, dengan
+rahang yang kuat sebagai adaptasi terhadap pola makan durofagus
+(\textit{durophagous}) yang mengandalkan pemangsaan hewan bercangkang keras
+seperti moluska dan krustasea \cite{fws2024loggerhead}, sebagaimana
+diperlihatkan pada Gambar~\ref{fig:loggerhead-head}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{bab2/tortuga-caguama-10.jpg}
+\caption{Karakteristik kepala penyu loggerhead (\textit{Caretta caretta}):
+kepala besar dan rahang kuat sebagai adaptasi durofagus.}
+\label{fig:loggerhead-head}
+\end{figure}
+
+Permukaan kepala penyu loggerhead ditutupi oleh sisik keratin
+(\textit{scutes}) yang tersusun dalam pola geometris tetap, meliputi sisik
+prefrontal, sisik parietal, dan sisik postokular yang mengelilingi mata,
+sebagaimana diilustrasikan pada Gambar~\ref{fig:scute-pattern}. Pola tersebut
+bersifat permanen sepanjang hayat individu karena terbentuk pada tahap
+perkembangan embrio dan tidak mengalami regenerasi struktural, sehingga
+berfungsi sebagai penanda biometrik alami yang stabil \cite{carpentier2016}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{bab2/Facial-Scales.jpg}
+\caption{Pola sisik wajah (\textit{facial scute pattern}) pada penyu
+loggerhead, menunjukkan susunan sisik prefrontal, parietal, dan postokular
+yang unik per individu.}
+\label{fig:scute-pattern}
+\end{figure}
+
+Dari segi pigmentasi, kepala dan karapas penyu loggerhead umumnya berwarna
+kemerahan hingga cokelat kekuningan (\textit{reddish-brown}), berbeda dari
+penyu hijau (\textit{Chelonia mydas}) yang cenderung memiliki karapas
+berwarna zaitun gelap \cite{fws2024loggerhead}, sebagaimana perbandingannya
+ditunjukkan pada Gambar~\ref{fig:loggerhead-vs-green}. Variasi pigmentasi
+antarindividu turut berkontribusi pada tekstur visual yang ditangkap model,
+meskipun penelitian ini menitikberatkan pada pola geometris sisik dan bukan
+warna sebagai fitur utama.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{bab2/loggerhead-v-green.jpg}
+\caption{Perbandingan morfologi kepala penyu loggerhead (\textit{Caretta
+caretta}) dan penyu hijau (\textit{Chelonia mydas}), menunjukkan perbedaan
+warna dan proporsi kepala.}
+\label{fig:loggerhead-vs-green}
+\end{figure}
+
+\subsubsection{Status Konservasi dan Ancaman terhadap Loggerhead}
+
+Penyu loggerhead berstatus \textit{Vulnerable} (rentan) secara global pada
+\textit{IUCN Red List of Threatened Species}, dengan variasi status yang
+berbeda-beda di antara sepuluh unit manajemen regionalnya
+(\textit{regional management units}); beberapa subpopulasi bahkan
+dikategorikan \textit{Critically Endangered}, seperti subpopulasi Pasifik
+Selatan yang terus mengalami penurunan meskipun telah mendapatkan upaya
+konservasi selama beberapa dekade \cite{casale2015loggerhead}. Ancaman
+terbesar terhadap populasi loggerhead di seluruh dunia adalah kematian akibat
+tertangkap secara tidak sengaja pada alat tangkap perikanan
+(\textit{fisheries bycatch}), terutama pada \textit{longline} dan
+\textit{gillnet}, diikuti oleh degradasi habitat peneluran akibat
+pembangunan pesisir dan dampak perubahan iklim terhadap suhu inkubasi telur
+\cite{casale2015loggerhead, wallace2023loggerhead}.
+
+Populasi di kawasan Mediterania, tempat dataset SeaTurtleIDHeads dan
+SeaTurtleID2022 dikumpulkan, tercatat sebagai satu-satunya spesies penyu
+yang bersarang secara reguler di sepanjang pesisir Italia dan Yunani, namun
+tetap menghadapi tekanan antropogenik yang signifikan berupa \textit{bycatch}
+perikanan, degradasi habitat pesisir, polusi laut, serta peningkatan suhu
+pasir yang berdampak pada keberhasilan penetasan dan rasio jenis kelamin
+tukik \cite{piovano2025loggerhead}. Meskipun beberapa kajian jangka panjang
+menunjukkan indikasi pemulihan populasi pada sejumlah lokasi peneluran akibat
+upaya konservasi berkelanjutan \cite{cozens2026loggerhead}, tekanan
+antropogenik yang persisten tersebut menegaskan urgensi pengembangan sistem
+identifikasi individu yang akurat, murah, dan non-invasif seperti yang
+diusulkan pada penelitian ini, guna mendukung pemantauan populasi jangka
+panjang tanpa menambah beban stres fisiologis pada individu penyu yang sudah
+rentan.
+
 %-------------------------------------------------------------
 \subsection{Ekstraksi Pola Kepala Penyu}
+\label{sec:ekstraksi-pola}
 %-------------------------------------------------------------
 \subsubsection{Karakteristik Pola Sisik Kepala Penyu}
  
