@@ -16,7 +16,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Sea Turtle Re-Identification with DINOv3 Vision Transformers}
+\title{Development of Sea Turtle Re-Identification Model using Vision Transformers}
 
 \author{\IEEEauthorblockN{1\textsuperscript{st} Sulthan Daffa Arif Mahmudi}
   \IEEEauthorblockA{\textit{Computer Engineering} \\
@@ -40,246 +40,229 @@
 \maketitle
 
 \begin{abstract}
-  Sea turtle populations continue to decline, and conservation programmes need to
-  identify individuals without the cost and invasiveness of satellite tagging. We
-  present a re-identification (Re-ID) system for sea turtle head images built on a
-  Vision Transformer (ViT) backbone pretrained with DINOv3, trained under a strict
-  open-set identity split on the SeaTurtleIDHeads dataset. A baseline configuration
-  derived from literature conventions reaches 78.3\% Rank-1 and 84.9\% mAP; a tuned
-  configuration reaches 90.4\% Rank-1 and 93.5\% mAP. A one-factor-at-a-time study
-  over 19 parameters shows that the backbone learning rate alone accounts for
-  roughly 78\% of the total improvement, and that individual gains are strongly
-  sub-additive: summing them predicts an arithmetically impossible 112\% Rank-1,
-  while only 36\% of the predicted gain is realised when combined. Applied to
-  SeaTurtleID2022 without any retraining, the model retains 81.1\% Rank-1 and
-  97.2\% Rank-5, confirming that the learned embedding transfers across capture
-  domains. The system's real limitation appears only when unregistered individuals
-  must be rejected: Registered Rank-1 falls to 55.3\% with a global threshold and
-  56.7\% with a background class, both at a false-reject rate near 42\%. Two
-  fundamentally different decision rules converge on nearly the same operating
-  point because top-1 cosine scores of registered and unregistered queries are
-  confined to a narrow band (ROC-AUC $0.77$--$0.79$). In the worst failures the
-  correct identity still ranks first and is discarded by the rejection stage. The
-  bottleneck is therefore score calibration, not representation quality.
+  Photo-based individual identification is an attractive non-invasive alternative to
+  satellite tagging for sea turtle conservation, but published systems are typically
+  reported as a single tuned configuration, leaving practitioners without guidance on
+  which design choices actually matter. We fine-tune a DINOv3-pretrained Vision
+  Transformer with an embedding head on SeaTurtleIDHeads under a strict open-set
+  identity split, combining ArcFace and online hard triplet losses with layer-wise
+  learning rate decay. We then vary nineteen parameters one factor at a time to build a
+  sensitivity map. A conventionally chosen baseline reaches Rank-1 of $78.3\%$ and mAP of
+  $84.9\%$; combining every individually-best setting reaches $90.4\%$ and $93.5\%$.
+  Three findings are of practical interest. First, the backbone learning rate dominates:
+  raising it alone from $10^{-5}$ to $10^{-4}$ yields Rank-1 of $87.8\%$, roughly $78\%$
+  of the total gain, whereas six of the nineteen parameters move Rank-1 by under two
+  points. Second, parameter effects are strongly sub-additive: summing the individual
+  gains predicts $+33.7$ points, an arithmetically impossible figure, while only $+12.1$
+  points materialize. Third, and most consequential for deployment, the embedding
+  transfers to the unseen SeaTurtleID2022 domain at Rank-1 of $81.1\%$, yet open-set
+  rejection of unenrolled individuals collapses the effective accuracy to
+  $55$--$57\%$ at a $42\%$ false-reject rate. Two structurally different rejection rules
+  converge on nearly identical operating points because all top-1 similarities occupy a
+  narrow $0.85$--$0.98$ band with ROC-AUC of only $0.77$--$0.79$. The bottleneck is score
+  calibration, not representation quality.
 \end{abstract}
 
 \begin{IEEEkeywords}
-  Sea turtle, re-identification, Vision Transformer, DINOv3, open-set recognition,
-  wildlife monitoring
+  animal re-identification, vision transformer, DINOv3, metric learning, open-set
+  recognition, wildlife conservation, sea turtle
 \end{IEEEkeywords}
 
 % -------------------------------------------------------
 \section{Introduction}
 % -------------------------------------------------------
 
-Sea turtles are among the most ecologically significant yet threatened groups of
-marine reptiles. Indonesia alone hosts six of the world's seven species~\cite{ario2016}.
-Populations have declined sharply due to coastal development that destroys
-nesting habitats and to illegal egg collection and poaching~\cite{ario2016}.
-Documented cases in West Sulawesi between 2016 and 2019 reported more than twenty
-turtles killed for their eggs and meat~\cite{nur2022}.
+Sea turtles are globally threatened, and effective conservation depends on tracking
+individuals across time to estimate population size, migration routes, and
+reproductive behaviour. The dominant instrumented approach, satellite tagging, is
+expensive per unit, prone to device failure, and invasive enough to require careful
+attachment to avoid harming the animal \cite{hays2018}.
 
-Effective conservation requires tracking individuals non-invasively over long
-periods in order to estimate population size, study migration, and monitor
-reproduction. The conventional approach, satellite tagging, attaches a GPS
-transmitter to the animal. It is accurate but expensive, vulnerable to device
-malfunction, and imposes stress during attachment~\cite{hays2018}.
+Photo-identification offers a non-invasive alternative. The keratin scutes covering a
+turtle's head form a geometric pattern that develops embryonically and does not
+structurally regenerate, making it a stable natural biometric \cite{carpentier2016}.
+Automated re-identification (Re-ID) over such patterns has progressed from hand-crafted
+local descriptors \cite{gatto2018,dunbar2023} to convolutional networks
+\cite{nguyen2023} and, most recently, to large self-supervised backbones
+\cite{cermak2024}.
 
-Computer-vision re-identification (Re-ID) is a non-invasive alternative. Re-ID
-recognises a previously observed individual from new images using unique visual
-characteristics~\cite{zheng2016}. For sea turtles the scale (scute) patterns on
-the head remain stable throughout an individual's lifetime~\cite{carpentier2016},
-functioning as a natural biometric. Vision Transformers~\cite{dosovitskiy2021}
-combined with self-supervised pretraining such as DINOv3~\cite{simeoni2025}
-produce rich, transferable representations well suited to this fine-grained task.
+Re-ID is not closed-set classification. The model must map images to an embedding
+space in which the same individual is close and different individuals are far apart,
+and it must do so for identities never seen during training \cite{zheng2015}. This
+open-set requirement is precisely what makes the task useful in the field, where new
+animals are encountered continuously.
 
-Most wildlife Re-ID work reports closed-gallery retrieval accuracy. Field
-deployment, however, is inherently open-set in a second and harder sense: a
-photograph may show an animal that has never been registered, and the system must
-say so. We find that this distinction dominates practical performance. Our
-contributions are:
+Existing sea turtle Re-ID work reports a single tuned system. That is sufficient to
+establish feasibility, but it does not tell a practitioner adapting the pipeline to a
+new site which knobs to turn first, nor how much of the reported accuracy survives a
+change of camera and location. This paper addresses both gaps. Our contributions are:
 
 \begin{itemize}
-  \item A DINOv3 ViT Re-ID pipeline for sea turtle head images, trained under an
-        open-set identity split, reaching 90.4\% Rank-1 and 93.5\% mAP on held-out
-        identities.
-  \item A sensitivity map over 19 parameters showing that the backbone learning
-        rate is the single dominant factor, and that per-parameter gains measured by
-        one-factor-at-a-time (OFAT) tuning are sub-additive and cannot be summed.
-  \item A cross-dataset evaluation on SeaTurtleID2022 without retraining,
-        quantifying the cost of domain change at 9.3 percentage points (pp) of Rank-1.
-  \item Evidence that under unregistered-identity rejection the limiting factor is
-        score calibration rather than embedding quality: two structurally different
-        rejection rules reach nearly identical operating points, and correct matches
-        remain rank-1 even among the most confident errors.
+  \item A DINOv3 ViT Re-ID pipeline for loggerhead head images trained under an open-set
+        identity split, evaluated with and without $k$-reciprocal re-ranking.
+  \item A sensitivity map over nineteen parameters obtained by one-factor-at-a-time
+        (OFAT) variation from a deliberately convention-based, not result-tuned, baseline.
+        This ordering is, to our knowledge, the first published for animal Re-ID with ViTs.
+  \item An explicit demonstration that OFAT gains do not compose. Summing individual
+        improvements over-predicts the combined configuration by a factor of roughly $2.8$,
+        and the predicted value exceeds $100\%$ Rank-1.
+  \item A cross-dataset and open-set evaluation on SeaTurtleID2022 showing that
+        representation quality transfers but rejection of unenrolled individuals does not, and
+        localizing the failure to the similarity score distribution rather than to the
+        embedding.
 \end{itemize}
+
+We deliberately report the negative open-set result in full. A conservation system that
+silently rejects two of every five valid sightings is not deployable, and identifying
+why is more useful than reporting only the favourable in-distribution number.
 
 % -------------------------------------------------------
 \section{Related Work}
 % -------------------------------------------------------
 
-\subsection{Sea Turtle Individual Identification}
+\subsection{Photo-Identification of Sea Turtles}
 
-Early automated systems used neural network ensembles on facial scute images of
-green turtles~\cite{carter2014}. Carpentier et al.~\cite{carpentier2016} validated
-the long-term stability of facial scute patterns over 11 years, confirming their
-suitability as persistent biometric markers. Alternative body regions such as
-front-flipper scales have also been explored~\cite{gatto2018,dunbar2023}, with
-some showing higher accuracy under specific conditions.
+Carter et al.\ \cite{carter2014} applied neural network ensembles to green turtle
+facial scutes, marking the shift from expert-dependent manual matching toward
+reproducible automation. Carpentier et al.\ \cite{carpentier2016} validated facial
+scute stability over an eleven-year span, supplying the biological justification for
+head-based identity systems. Gatto et al.\ \cite{gatto2018} and Dunbar et al.\
+\cite{dunbar2023} explored front-flipper scutes as an alternative region, with the
+latter reporting higher accuracy for flippers under certain conditions, though head
+images remain preferred in the field for ease of capture.
 
-Adam et al.~\cite{adam2023} introduced SeaTurtleID2022, a 13-year longitudinal
-dataset of 438 loggerhead turtles, together with a time-aware open-set protocol
-and a baseline integrating Hybrid Task Cascade segmentation with ArcFace feature
-extraction, reaching 86.8\% Rank-1. Nguyen et al.~\cite{nguyen2023} evaluated
-AlexNet, GoogLeNet, VGG-19, and ResNet-50 on facial scute images, with ResNet-50
-reaching 95.3\% accuracy on a mixed dataset under a closed-set protocol.
-\v{C}erm\'ak et al.~\cite{cermak2024} introduced WildlifeDatasets and
-MegaDescriptor, the first multi-species Re-ID foundation model, outperforming
-general pretrained models including CLIP and DINOv2. Papafitsoros et
-al.~\cite{papafitsoros2025} improved accuracy further by exploiting left-right
-facial profile similarities within the same individual.
+\subsection{Deep Learning Benchmarks}
 
-\subsection{Vision Transformers and Metric Learning}
+Adam et al.\ \cite{adam2023} introduced SeaTurtleID2022, comprising 8{,}729 photographs
+of 438 loggerhead individuals collected over thirteen years in the Greek islands, along
+with a time-aware open-set protocol and a Hybrid Task Cascade plus ArcFace baseline
+reaching Rank-1 of $86.8\%$. Nguyen et al.\ \cite{nguyen2023} benchmarked CNN
+architectures on facial scutes, reaching $95.3\%$ with ResNet-50 on a mixed-quality set
+of 1{,}426 images across 20 identities. \v{C}erm\'{a}k et al.\ \cite{cermak2024}
+released the WildlifeDatasets toolkit and MegaDescriptor, a multi-species Re-ID
+foundation model that outperforms generic pretrained backbones including CLIP and
+DINOv2. Papafitsoros et al.\ \cite{papafitsoros2025} exploited visual similarity
+between left and right facial profiles of the same individual, a signal conventional
+photo-ID pipelines discard by partitioning libraries per side.
 
-ViT~\cite{dosovitskiy2021} applies the Transformer architecture directly to
-sequences of image patches; self-attention captures global spatial relationships
-in a single layer, unlike the bounded receptive field of convolutions.
-DINO~\cite{caron2021}, DINOv2~\cite{oquab2024}, and DINOv3~\cite{simeoni2025}
-provide self-supervised ViT features that transfer strongly to downstream
-recognition without labels. Re-ID itself is usually framed as metric
-learning~\cite{schroff2015}, with ArcFace~\cite{deng2019} enforcing an additive
-angular margin between class prototypes and batch-hard triplet
-mining~\cite{hermans2017} shaping local distances. K-reciprocal
-re-ranking~\cite{zhong2017} is a standard unsupervised post-processing step.
+We emphasize that our numbers are not directly comparable to \cite{adam2023} or
+\cite{nguyen2023}: the datasets, identity counts, and split protocols differ. Our
+contribution is the relative structure of the design space, which is comparable across
+setups in a way that absolute accuracy is not.
+
+\subsection{Self-Supervised Vision Transformers}
+
+The Vision Transformer \cite{dosovitskiy2021} processes an image as a sequence of
+patches, allowing every patch to attend to every other at each layer. This suits Re-ID
+of scute patterns, whose discriminative regions are spatially scattered across the
+head. DINO \cite{caron2021} showed that self-distillation without labels induces
+attention maps containing object boundary information at pixel resolution; DINOv2
+\cite{oquab2024} scaled this to a curated 142M-image corpus with combined image- and
+patch-level objectives; DINOv3 \cite{simeoni2025} further improves dense feature
+correspondence and out-of-distribution generalization. Boundary-sensitive dense
+features are directly relevant here, since no scute-level segmentation annotation
+exists for turtles.
+
+\subsection{Metric Learning Objectives}
+
+ArcFace \cite{deng2019} applies an additive angular margin on the unit hypersphere,
+giving a margin with consistent geodesic meaning regardless of class position. Triplet
+loss \cite{schroff2015} with batch-hard mining \cite{hermans2017} optimizes relative
+distances directly. Their linear combination is standard in competitive Re-ID, on the
+premise that ArcFace provides global inter-class separation while triplet loss enforces
+local distance consistency. One of our findings challenges that premise at this data
+scale.
 
 % -------------------------------------------------------
 \section{Methodology}
 % -------------------------------------------------------
 
-\subsection{Dataset and Protocol}
+\subsection{Dataset and Open-Set Protocol}
 
-SeaTurtleIDHeads~\cite{wildlifedatasets2023} contains 7,582 images of 400
-individual sea turtles collected over more than a decade. All images are cropped
-to the head region and vary widely in pose, lighting, camera angle, distance, and
-resolution, reflecting real field conditions. Head detection and segmentation are
-outside the scope of this work; inputs are assumed pre-cropped.
+We train on SeaTurtleIDHeads \cite{stidheads}, containing 7{,}582 head-cropped images
+of 400 loggerhead (\textit{Caretta caretta}) individuals photographed over more than a
+decade in Greek waters. The set exhibits wide variation in pose, illumination, viewing
+angle, camera distance, and resolution, reflecting realistic field capture. We prefer
+it over SeaTurtleID2022 as the training source because the latter has lower image
+resolution and was designed primarily for segmentation.
 
-The dataset is split into training (70\%), validation (20\%), and test (10\%)
-partitions by an open-set identity split: no individual appears in more than one
-partition, so every reported result concerns identities never seen during
-training. Identities with fewer than $N_G + 2$ images are excluded, guaranteeing
-$N_G$ gallery images and at least two query images per identity. Within each
-evaluation partition, $N_G = 3$ images per identity are randomly assigned to the
-gallery and mean-pooled into a single $\ell_2$-normalised prototype; the remainder
-form the query set. Validation is used only for checkpoint selection; the test
-partition is used once.
+The dataset is partitioned $70{:}20{:}10$ into train, validation, and test by
+\emph{identity}, so no individual appears in more than one partition. All reported
+evaluation is therefore open-set at the identity level. Identities with fewer than
+$N_{\min} = N_G + 2$ images are discarded so that every retained identity can supply a
+gallery and at least two queries. Validation and test partitions are each split into a
+gallery of $N_G$ randomly chosen images per identity and a query set of the remainder.
+Validation is used only for early stopping and checkpoint selection; test is touched
+once.
 
 \subsection{Preprocessing and Augmentation}
 
-Images are resized to $256 \times 256$. Training augmentations are applied
-sequentially: random crop (resize to $288 \times 288$, crop to $256 \times 256$),
-random horizontal flip ($p = 0.5$), colour jitter over brightness, contrast,
-saturation and hue, random grayscale ($p = 0.1$), random rotation up to
-$20^{\circ}$, Gaussian blur (kernel $5 \times 5$, $\sigma \in [0.1, 2.0]$), and
-random erasing ($p = 0.3$) to simulate partial occlusion by seagrass or shadow.
-At evaluation only resize and normalisation are applied. Pixels are normalised
-with ImageNet statistics ($\mu = [0.485, 0.456, 0.406]$,
-$\sigma = [0.229, 0.224, 0.225]$).
+Images are resized to $\texttt{img\_size} \times \texttt{img\_size}$. Training
+augmentation comprises random crop from a $+32$ pixel resize, horizontal flip
+($p=0.5$), colour jitter over brightness, contrast, saturation and hue, random
+grayscale ($p=0.1$), rotation up to $20^\circ$, Gaussian blur with a $5\times5$ kernel
+and $\sigma \in [0.1, 2.0]$, and random erasing ($p=0.3$). Evaluation applies resize and
+normalization only, keeping results deterministic. Pixel statistics follow ImageNet
+conventions, matching the pretraining regime.
 
-\subsection{Model Architecture}
+\subsection{Architecture}
 
-\subsubsection{Backbone}
-The baseline backbone is ViT-B/16 pretrained with DINOv3~\cite{simeoni2025},
-loaded via the PyTorch Image Models (timm) library. A $256 \times 256$ input
-yields 256 patch tokens; after 12 Transformer blocks, the 768-dimensional [CLS]
-token serves as the global image representation.
+The backbone is a DINOv3-pretrained ViT loaded from \texttt{timm}, with a $16\times16$
+patch grid. At $256\times256$ input this yields $256$ patch tokens plus one class
+token. The class token output of dimension $768$ (ViT-B) is projected by an embedding
+head consisting of layer normalization, dropout with probability $p_{\text{drop}}$, and
+a bias-free linear map to dimension $d_e$. The output is $L_2$-normalized, placing all
+embeddings on the unit hypersphere so that cosine similarity reduces to a dot product.
 
-\subsubsection{Embedding Head}
-The backbone output passes through Layer Normalisation, dropout
-($p_{\text{drop}}$), and a bias-free linear projection $768 \to d_e = 256$. The
-output is $\ell_2$-normalised, placing all embeddings on the unit hypersphere so
-that cosine similarity reduces to a dot product.
+\subsection{Objective}
 
-\subsection{Loss Functions}
-
-ArcFace~\cite{deng2019} adds an angular margin $m_a$ to the angle between an
-embedding and its correct class prototype before softmax cross-entropy:
-
+ArcFace loss is the primary term:
 \begin{equation}
-  \mathcal{L}_{\text{ArcFace}} = -\frac{1}{N}\sum_{i=1}^{N}
+  \mathcal{L}_{\text{Arc}} = -\frac{1}{N}\sum_{i=1}^{N}
   \log \frac{e^{s_a \cos(\theta_{y_i} + m_a)}}
   {e^{s_a \cos(\theta_{y_i} + m_a)} + \sum_{j \neq y_i} e^{s_a \cos\theta_j}}
-  \label{eq:arcface}
 \end{equation}
-
-with scale $s_a = 32.0$ and margin $m_a = 0.5$. The scale is set below the value
-of 64 used in the original formulation because the identity count here is far
-smaller than in large-scale face benchmarks; Section~\ref{sec:sens} confirms this
-choice empirically.
-
-Online Hard Triplet Loss~\cite{hermans2017} mines the hardest positive and hardest
-negative within each batch:
-
+where $\theta_{y_i}$ is the angle between the sample embedding and its class prototype.
+An online hard triplet term selects, for each anchor in the batch, the farthest positive
+and nearest negative:
 \begin{equation}
-  \mathcal{L}_{\text{Triplet}} = \frac{1}{N}\sum_{i=1}^{N}
-  \max\!\bigl(d(a_i, p_i) - d(a_i, n_i) + m_t,\; 0\bigr)
-  \label{eq:triplet}
+  \mathcal{L}_{\text{Tri}} = \frac{1}{N}\sum_{i=1}^{N}
+  \max\!\big(d(a_i, p_i) - d(a_i, n_i) + m_t,\ 0\big)
 \end{equation}
-
-where $d(\cdot,\cdot)$ is the Euclidean distance and $m_t = 0.3$. The total
-objective is
-
+with masked selection to prevent zero-valued non-pair entries from being mistaken for
+the smallest positive distance. The total objective is
 \begin{equation}
-  \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{ArcFace}} +
-  \lambda_t \cdot \mathcal{L}_{\text{Triplet}}.
-  \label{eq:total}
+  \mathcal{L} = \mathcal{L}_{\text{Arc}} + \lambda_t \mathcal{L}_{\text{Tri}}.
 \end{equation}
 
-\subsection{Training Configuration}
+\subsection{Optimization}
 
-Each batch contains $P = 16$ identities with $K = 4$ images each (batch size 64),
-sampled with replacement so that valid positive pairs always exist.
-AdamW~\cite{loshchilov2019} is used with weight decay $\lambda_w = 10^{-4}$.
-Layer-wise Learning Rate Decay (LLRD)~\cite{sun2019} assigns each Transformer
-block $i$ of $L = 12$ its own rate:
-
+Batches are formed by a balanced sampler drawing $P$ identities and $K$ images per
+identity, guaranteeing valid positive pairs. The optimizer is AdamW with decoupled
+weight decay $\lambda_w$. Layer-wise learning rate decay assigns transformer block $i$
+of $L$ a rate
 \begin{equation}
-  \eta_i = \eta_{\text{bb}} \cdot \gamma^{L - i}, \quad \gamma = 0.75
-  \label{eq:llrd}
+  \eta_i = \eta_{\text{bb}} \cdot \gamma^{\,L-i},
 \end{equation}
-
-with backbone base rate $\eta_{\text{bb}} = 10^{-5}$, while the randomly
-initialised embedding head and ArcFace classifier use
-$\eta_{\text{base}} = 10^{-3}$. A linear warmup of $W = 5$ epochs precedes cosine
-decay~\cite{loshchilov2017} over $E = 50$ epochs:
-
-\begin{equation}
-  \eta(e) = \begin{cases}
-    \eta_{\max} \cdot \dfrac{e+1}{W}                                                           & e < W    \\[6pt]
-    \dfrac{\eta_{\max}}{2}\!\left(1 + \cos\!\left(\pi \cdot \dfrac{e - W}{E - W}\right)\right) & e \geq W
-  \end{cases}
-  \label{eq:schedule}
-\end{equation}
-
-Gradients are clipped at $G_{\max} = 1.0$; validation runs every 5 epochs with
-early stopping patience of 10 intervals; automatic mixed precision is enabled.
+so shallower blocks, which encode more generic features, are updated more conservatively.
+The randomly initialized embedding head and ArcFace layer use a separate, higher base
+rate $\eta_{\text{base}}$. A LambdaLR schedule applies linear warmup over $W$ epochs
+followed by cosine decay to zero over the remaining $E - W$ epochs. Gradients are
+clipped at $G_{\max}$ and mixed precision is enabled.
 
 \subsection{Inference and Evaluation}
 
-Embeddings are extracted with a single forward pass over the resized image and
-$\ell_2$-normalised; no test-time augmentation is used, so all reported
-differences are attributable to training and to domain, not to inference
-protocol. Similarity is cosine, optionally refined by k-reciprocal
-re-ranking~\cite{zhong2017}:
-
+Embeddings are extracted in a single forward pass over the resized image and
+$L_2$-normalized; no test-time augmentation is used, so the same protocol applies to
+in-distribution and cross-dataset evaluation. Gallery images of one identity are
+mean-pooled into a single prototype and renormalized. Similarity is computed as
+$S = QG^\top$. We optionally apply $k$-reciprocal re-ranking \cite{zhong2017}, which
+combines cosine and Jaccard distances,
 \begin{equation}
-  D_{\text{final}}(q, g) = \lambda_{rr} D_{\text{cosine}}(q, g)
-  + (1 - \lambda_{rr}) D_{\text{Jaccard}}(q, g)
-  \label{eq:rerank}
+  D_{\text{final}}(q,g) = \lambda_{rr} D_{\cos}(q,g) + (1-\lambda_{rr}) D_{\text{Jac}}(q,g),
 \end{equation}
-
-with $k_1 = 20$, $k_2 = 6$, $\lambda_{rr} = 0.3$. We report Rank-1/5/10 from the
-Cumulative Matching Characteristic and mean Average Precision (mAP)~\cite{zheng2015}.
+with $k_1 = 20$, $k_2 = 6$, $\lambda_{rr} = 0.3$, accelerated by FAISS. We report CMC at
+ranks 1, 5, 10 and mAP.
 
 % -------------------------------------------------------
 \section{Experiments}
@@ -287,454 +270,507 @@ Cumulative Matching Characteristic and mean Average Precision (mAP)~\cite{zheng2
 
 \subsection{Experimental Setup}
 
-All experiments ran on a single NVIDIA GeForce RTX 4090 (24\,GB) with an Intel
-Core i9-13900KF, 64\,GB RAM, Windows 11, Python 3.10, PyTorch 2.11.0, and timm
-1.0.25. A fixed seed (42) was used throughout; variance across seeds was not
-measured, which bounds the conclusions drawn from small effects
-(Section~\ref{sec:disc}).
 
-\subsection{Baseline Results}
+Experiments run on an NVIDIA RTX 4090, Intel Core i9-13900KF, 64\,GB RAM, Python 3.10,
+PyTorch 2.11 with CUDA 12.6, and \texttt{timm} 1.0.25. A fixed seed of 42 is set across
+\texttt{random}, \texttt{numpy}, and \texttt{torch}.
 
-The baseline configuration in Table~\ref{tab:cfg} was fixed from literature
-conventions \emph{before} any variation was run, so that the OFAT analysis is not
-circular: a parameter's contribution can only be judged fairly if the reference
-point was chosen without using the results it is meant to evaluate.
-Table~\ref{tab:baseline} reports its performance.
+The baseline in Table~\ref{tab:baseline_cfg} was fixed \emph{before} any variation
+experiment, from conventions in the ViT and metric-learning literature adjusted for
+dataset scale. This matters methodologically: had the reference point been chosen using
+the variation results, the OFAT analysis would be circular and no parameter could be
+shown to be mis-set. The conservative backbone learning rate that convention prescribes
+turns out to be the single largest performance limiter, a finding only reachable
+because the baseline was not tuned.
 
-\begin{table}[htbp]
-  \caption{Baseline Configuration}
-  \label{tab:cfg}
+\begin{table}[t]
+  \caption{Baseline configuration}
+  \label{tab:baseline_cfg}
   \centering
-  \small
-  \begin{tabular}{llc}
+  \footnotesize
+  \begin{tabular}{@{}llc@{}}
     \toprule
-    \textbf{Category} & \textbf{Parameter}                  & \textbf{Value}  \\
+    \textbf{Group} & \textbf{Parameter}                    & \textbf{Value}  \\
     \midrule
-    \multirow{2}{*}{Dataset}
-                      & Image size                          & 256             \\
-                      & Gallery images / identity $N_G$     & 3               \\
+    \multirow{2}{*}{Data}
+                   & Image size                            & 256             \\
+                   & Gallery images per identity $N_G$     & 3               \\
     \midrule
     \multirow{3}{*}{Architecture}
-                      & Backbone                            & ViT-B/16 DINOv3 \\
-                      & Embedding dim $d_e$                 & 256             \\
-                      & Dropout $p_{\text{drop}}$           & 0.1             \\
+                   & Backbone                              & ViT-B/16 DINOv3 \\
+                   & Embedding dim $d_e$                   & 256             \\
+                   & Dropout $p_{\text{drop}}$             & 0.1             \\
     \midrule
     \multirow{4}{*}{Loss}
-                      & ArcFace scale $s_a$                 & 32.0            \\
-                      & ArcFace margin $m_a$                & 0.5             \\
-                      & Triplet margin $m_t$                & 0.3             \\
-                      & Triplet weight $\lambda_t$          & 0.5             \\
+                   & ArcFace scale $s_a$                   & 32.0            \\
+                   & ArcFace margin $m_a$                  & 0.5             \\
+                   & Triplet margin $m_t$                  & 0.3             \\
+                   & Triplet weight $\lambda_t$            & 0.5             \\
     \midrule
-    \multirow{4}{*}{Training}
-                      & Identities / batch $P$              & 16              \\
-                      & Images / identity $K$               & 4               \\
-                      & Epochs $E$                          & 50              \\
-                      & Warmup $W$                          & 5               \\
+    \multirow{6}{*}{Training}
+                   & Identities per batch $P$              & 16              \\
+                   & Images per identity $K$               & 4               \\
+                   & Epochs $E$                            & 50              \\
+                   & Warmup epochs $W$                     & 5               \\
+                   & Gradient clip $G_{\max}$              & 1.0             \\
+                   & Early-stop patience $P_{\text{stop}}$ & 10 intervals    \\
     \midrule
-    \multirow{4}{*}{Optimiser}
-                      & Weight decay $\lambda_w$            & $10^{-4}$       \\
-                      & Base LR $\eta_{\text{base}}$        & $10^{-3}$       \\
-                      & Backbone base LR $\eta_{\text{bb}}$ & $10^{-5}$       \\
-                      & LLRD factor $\gamma$                & 0.75            \\
+    \multirow{4}{*}{Optimizer}
+                   & Weight decay $\lambda_w$              & $10^{-4}$       \\
+                   & Base LR $\eta_{\text{base}}$          & $10^{-3}$       \\
+                   & Backbone base LR $\eta_{\text{bb}}$   & $10^{-5}$       \\
+                   & LLRD factor $\gamma$                  & 0.75            \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
-  \caption{Baseline Evaluation on SeaTurtleIDHeads Test Identities}
-  \label{tab:baseline}
+
+\section{Results}
+
+\subsection{Baseline Performance}
+
+Training loss decreases monotonically across all 50 epochs without spikes, indicating
+that five warmup epochs and clipping at $1.0$ suffice for stability. Validation metrics
+rise sharply during warmup and plateau under cosine decay with no late-epoch decline.
+The absence of overfitting at $E=50$ is consistent with two later findings: extending
+to $E=100$ still improves performance, and adding regularization degrades it. The model
+is budget-limited, not regularization-limited.
+
+\begin{table}[t]
+  \caption{Baseline evaluation on the SeaTurtleIDHeads test split}
+  \label{tab:baseline_res}
   \centering
-  \begin{tabular}{lccc}
+  \footnotesize
+  \begin{tabular}{@{}lccc@{}}
     \toprule
-    \textbf{Metric} & \textbf{Cosine} & \textbf{+Re-rank} & \textbf{$\Delta$ (pp)} \\
+    \textbf{Metric} & \textbf{Cosine} & \textbf{+Re-rank} & $\Delta$ (pp) \\
     \midrule
-    Rank-1 (\%)     & 77.4            & \textbf{78.3}     & $+0.9$                 \\
-    Rank-5 (\%)     & 91.5            & \textbf{92.3}     & $+0.8$                 \\
-    Rank-10 (\%)    & \textbf{95.9}   & 95.1              & $-0.8$                 \\
-    mAP (\%)        & 83.6            & \textbf{84.9}     & $+1.3$                 \\
+    Rank-1          & 77.4\%          & 78.3\%            & $+0.9$        \\
+    Rank-5          & 91.5\%          & 92.3\%            & $+0.8$        \\
+    Rank-10         & 95.9\%          & 95.1\%            & $-0.8$        \\
+    mAP             & 83.6\%          & 84.9\%            & $+1.3$        \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Accuracy rises steeply from Rank-1 to Rank-5 ($+14.0$\,pp) and only marginally
-from Rank-5 to Rank-10 ($+2.8$\,pp). For roughly 14\% of queries the correct
-identity is already within the top five but loses narrowly at rank 1, so most
-failures are ordering errors rather than retrieval failures. Re-ranking helps at
-the top of the list and on mAP while slightly hurting Rank-10, which is the
-expected trade-off for a method that optimises nearest-neighbour consistency.
+Table~\ref{tab:baseline_res} shows a steep Rank-1 to Rank-5 gain of $14.0$ points
+against only $2.8$ from Rank-5 to Rank-10. For roughly $14\%$ of queries the correct
+identity is already within the top five but loses narrowly at rank one, so most failures
+are ordering errors rather than retrieval failures. Qualitative inspection shows the
+residual $4.9\%$ concentrated on blurred, low-contrast images where scute geometry is no
+longer legible.
+
+Re-ranking helps at the top of the list and on mAP but slightly hurts Rank-10, which is
+expected: it optimizes neighbourhood consistency and occasionally pushes a correct
+candidate out of a deeper cutoff. Net effect is positive but modest, on the order of one
+point.
 
 \subsection{Parameter Sensitivity}
-\label{sec:sens}
 
-Nineteen parameters were varied one at a time with all others held at baseline.
-Table~\ref{tab:sens} summarises the outcome, ordered by Rank-1 range, i.e. the
-spread between the best and worst tested value. Range measures how much
-performance moves when a parameter is misconfigured, independently of whether the
-baseline was already optimal; $\Delta$ measures the headroom available above the
-baseline's 78.3\%.
+Table~\ref{tab:sensitivity} ranks all nineteen parameters by Rank-1 range, the spread
+between the best and worst tested value. Range measures how far performance moves when
+a parameter is misconfigured, independent of whether the baseline was already correct;
+the $\Delta$ column separately reports the headroom available above the baseline.
 
-\begin{table}[htbp]
-  \caption{Parameter Sensitivity, Ordered by Rank-1 Range (+Re-rank)}
-  \label{tab:sens}
+\begin{table}[t]
+  \caption{Parameter sensitivity, ordered by Rank-1 range. Baseline Rank-1 $=78.3\%$,
+    all values with re-ranking}
+  \label{tab:sensitivity}
   \centering
-  \small
-  \begin{tabular}{lllcc}
+  \scriptsize
+  \begin{tabular}{@{}lllrr@{}}
     \toprule
-    \textbf{Param}             & \textbf{Base} & \textbf{Best} & \textbf{$\Delta$R@1} & \textbf{Range}         \\
+    \textbf{Param.}      & \textbf{Base} & \textbf{Best} & \textbf{Best R-1} & \textbf{Range} \\
     \midrule
-    $\eta_{\text{base}}$       & $10^{-3}$     & $10^{-3}$     & $+0.0$               & 25.2                   \\
-    $N_G$\,\textsuperscript{a} & 3             & 3             & $+0.0$               & 20.1                   \\
-    $\eta_{\text{bb}}$         & $10^{-5}$     & $10^{-4}$     & $\mathbf{+9.5}$      & 19.6                   \\
-    Backbone                   & ViT-B/16      & ViT-L/16      & $+2.1$               & 19.0                   \\
-    $E$                        & 50            & 100           & $+6.1$               & 14.7                   \\
-    $P$                        & 16            & 8             & $+0.8$               & 10.6                   \\
-    $p_{\text{drop}}$          & 0.1           & 0.0           & $+2.7$               & 7.9                    \\
-    $K$                        & 4             & 2             & $+0.8$               & 7.2                    \\
-    $\lambda_t$                & 0.5           & 0.0           & $+5.1$               & 5.8                    \\
-    $s_a$                      & 32.0          & 32.0          & $+0.0$               & 5.4                    \\
-    Image size                 & 256           & 256           & $+0.0$               & 5.0                    \\
-    $m_a$                      & 0.5           & 1.0           & $+1.7$               & 3.5                    \\
-    $W$                        & 5             & 3             & $+2.7$               & 2.7                    \\
-    $d_e$                      & 256           & 256           & $+0.0$               & 1.8                    \\
-    $m_t$                      & 0.3           & 0.3           & $+0.0$               & 1.8                    \\
-    $G_{\max}$                 & 1.0           & 1.0           & $+0.0$               & 1.7                    \\
-    $\gamma$                   & 0.75          & 0.65          & $+1.2$               & 1.2                    \\
-    $P_{\text{stop}}$          & 10            & 20            & $+0.2$               & 0.9\textsuperscript{b} \\
-    $\lambda_w$                & $10^{-4}$     & $10^{-5}$     & $+0.8$               & 0.8                    \\
+    $\eta_{\text{base}}$ & $10^{-3}$     & $10^{-3}$     & 78.3\%            & 25.2           \\
+    $N_G$                & 3             & 3             & 78.3\%            & 20.1$^\dagger$ \\
+    $\eta_{\text{bb}}$   & $10^{-5}$     & $10^{-4}$     & \textbf{87.8\%}   & 19.6           \\
+    backbone             & ViT-B/16      & ViT-L/16      & 80.4\%            & 19.0           \\
+    $E$                  & 50            & 100           & 84.4\%            & 14.7           \\
+    $P$                  & 16            & 8             & 79.1\%            & 10.6           \\
+    $p_{\text{drop}}$    & 0.1           & 0.0           & 81.0\%            & 7.9            \\
+    $K$                  & 4             & 2             & 79.1\%            & 7.2            \\
+    $\lambda_t$          & 0.5           & 0.0           & 83.4\%            & 5.8            \\
+    $s_a$                & 32.0          & 32.0          & 78.3\%            & 5.4            \\
+    img.\ size           & 256           & 256           & 78.3\%            & 5.0            \\
+    $m_a$                & 0.5           & 1.0           & 80.0\%            & 3.5            \\
+    $W$                  & 5             & 3             & 81.0\%            & 2.7            \\
+    $d_e$                & 256           & 256           & 78.3\%            & 1.8            \\
+    $m_t$                & 0.3           & 0.3           & 78.3\%            & 1.8            \\
+    $G_{\max}$           & 1.0           & 1.0           & 78.3\%            & 1.7            \\
+    $\gamma$             & 0.75          & 0.65          & 79.5\%            & 1.2            \\
+    $P_{\text{stop}}$    & 10            & 20            & 78.5\%            & 0.9$^\ddagger$ \\
+    $\lambda_w$          & $10^{-4}$     & $10^{-5}$     & 79.1\%            & 0.8            \\
     \bottomrule
   \end{tabular}
   \vspace{2pt}
-  {\footnotesize \textsuperscript{a}$N_G$ alters the query/gallery composition, so its
-    rows are not evaluated on an identical query set.
-    \textsuperscript{b}Early stopping never triggers for $P_{\text{stop}} \geq 10$ at
-    $E = 50$.}
+  \raggedright\scriptsize
+  $^\dagger$ Varying $N_G$ changes the query/gallery composition, so rows are not
+  evaluated on an identical query set. \\
+  $^\ddagger$ Early stopping cannot trigger at $P_{\text{stop}} \geq 10$ under $E=50$;
+  the three largest values effectively disable it. \\
+  All values from a single seed; between-seed variance was not measured.
 \end{table}
 
-Three groups emerge. \textbf{Sensitive but already optimal:} $\eta_{\text{base}}$,
-$s_a$, and image size cannot be improved upon, yet misconfiguring them is costly.
-Moving $\eta_{\text{base}}$ by one decade in either direction costs more than
-22\,pp of Rank-1, because the randomly initialised head either fails to converge
-or never learns within the epoch budget. \textbf{Real headroom:}
-$\eta_{\text{bb}}$, $E$, $\lambda_t$, $p_{\text{drop}}$, backbone, $m_a$, and $W$.
-Raising the backbone rate from $10^{-5}$ to $10^{-4}$ yields 87.8\% Rank-1 and
-91.6\% mAP on its own, showing that the conventional, conservative fine-tuning
-rate was the single largest constraint on the system. Since the trend is monotone
-and $10^{-4}$ is the upper bound tested, the true optimum may lie higher.
-\textbf{Negligible:} the bottom six parameters move Rank-1 by under 2\,pp, which
-on a query set of a few hundred amounts to a handful of queries and is not
-separable from seed noise.
+Three groups emerge.
 
-Two results contradict common practice and deserve emphasis. First, disabling
-Triplet Loss entirely ($\lambda_t = 0$) is the best setting, improving Rank-1 to
-83.4\%; ArcFace alone is sufficiently discriminative at this dataset scale, and
-the triplet term interferes with optimisation. This also removes the
-justification for PK-sampling, explaining why $K = 2$ outperforms $K = 4$.
-Second, performance degrades monotonically with dropout, and weight decay prefers
-its smallest tested value. Together with the absence of overfitting at $E = 50$,
-this indicates that the model is not in an overfitting regime at all: the
-self-supervised DINOv3 features and the augmentation pipeline already act as
-strong implicit regularisation, and explicit regularisation only discards useful
-capacity.
+\textbf{Sensitive but already correct.} $\eta_{\text{base}}$, $s_a$, and image size
+degrade in either direction. The extreme case is $\eta_{\text{base}}$: a one-decade
+shift either way costs more than $22$ points, since the randomly initialized head fails
+to converge when the rate is too high and fails to learn within budget when too low.
+These confirm the convention-based choices were right, and that getting them wrong is
+expensive.
+
+\textbf{Real headroom.} $\eta_{\text{bb}}$, $E$, $\lambda_t$, $p_{\text{drop}}$,
+backbone, $m_a$, and $W$. Raising $\eta_{\text{bb}}$ to $10^{-4}$ alone gives Rank-1 of
+$87.8\%$ and mAP of $91.6\%$. Because the trend is monotonic and $10^{-4}$ is the upper
+bound tested, the true optimum may lie higher. Notably $\lambda_t = 0$ is best,
+i.e.\ disabling triplet loss entirely gives Rank-1 of $83.4\%$ with performance
+decreasing monotonically in $\lambda_t$. At this data scale ArcFace alone is
+sufficiently discriminative and the triplet term interferes with optimization. This also
+removes the justification for PK sampling, which explains why $K=2$ outperforms $K=4$.
+
+Batch composition is better read through effective batch size than through $P$ or $K$
+separately: both size-32 settings give identical Rank-1 of $79.1\%$ and both size-128
+settings collapse to $68.5$--$71.9\%$. Under a fixed epoch budget, larger batches quarter
+the number of update steps, so this is an under-training symptom, not a diversity effect.
+
+\textbf{Negligible.} $d_e$, $m_t$, $G_{\max}$, $\gamma$, $P_{\text{stop}}$, $\lambda_w$
+all move under two points, which on a query set of a few hundred amounts to a handful of
+queries. With a single seed these cannot be distinguished from noise, so we claim
+insensitivity rather than optimality for this group. The $P_{\text{stop}}$ result is
+structural rather than empirical: at $E=50$ with evaluation every five epochs,
+$P_{\text{stop}} \geq 10$ never fires.
 
 \subsection{Combined Configuration and Sub-Additivity}
 
-To test whether parameter effects are additive, a combined configuration adopting
-all 12 settings with positive $\Delta$ was trained (Table~\ref{tab:combined}).
+The combined configuration adopts every individually-best value from
+Table~\ref{tab:sensitivity} with positive $\Delta$: ViT-L/16, $p_{\text{drop}}=0$,
+$m_a=1.0$, $\lambda_t=0$, $P=8$, $K=2$, $E=100$, $W=3$, $P_{\text{stop}}=20$,
+$\lambda_w=10^{-5}$, $\eta_{\text{bb}}=10^{-4}$, $\gamma=0.65$; twelve changes in total.
 
-\begin{table}[htbp]
-  \caption{Baseline vs. Combined Configuration}
+\begin{table}[t]
+  \caption{Baseline versus combined configuration}
   \label{tab:combined}
   \centering
-  \small
-  \begin{tabular}{lcccc}
+  \footnotesize
+  \begin{tabular}{@{}lcccc@{}}
     \toprule
-                                      & \multicolumn{2}{c}{\textbf{Cosine}} & \multicolumn{2}{c}{\textbf{+Re-rank}}                                 \\
+                                    & \multicolumn{2}{c}{\textbf{Cosine}} & \multicolumn{2}{c}{\textbf{+Re-rank}}                                     \\
     \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-    \textbf{Configuration}            & R@1                                 & mAP                                   & R@1           & mAP           \\
+    \textbf{Config}                 & R-1                                 & mAP                                   & R-1             & mAP             \\
     \midrule
-    Baseline                          & 77.4                                & 83.6                                  & 78.3          & 84.9          \\
-    $\eta_{\text{bb}} = 10^{-4}$ only & ---                                 & ---                                   & 87.8          & 91.6          \\
-    Combined (12 changes)             & 89.1                                & 92.0                                  & \textbf{90.4} & \textbf{93.5} \\
+    Baseline                        & 77.4\%                              & 83.6\%                                & 78.3\%          & 84.9\%          \\
+    $\eta_{\text{bb}}=10^{-4}$ only & ---                                 & ---                                   & 87.8\%          & 91.6\%          \\
+    Combined                        & 89.1\%                              & 92.0\%                                & \textbf{90.4\%} & \textbf{93.5\%} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The combined configuration gains $+12.1$\,pp Rank-1 and $+8.6$\,pp mAP over the
-baseline, a substantial improvement. The comparison against the additive
-prediction, however, is the more informative result. Summing the individual
-$\Delta$ values gives $+33.7$\,pp, predicting $78.3 + 33.7 = 112.0\%$ Rank-1 --- above
-the theoretical maximum. The equivalent mAP calculation predicts 105.6\%. Only
-36\% of the predicted Rank-1 gain and 42\% of the predicted mAP gain materialise;
-the consistency of these ratios across two metrics indicates a systematic
-property rather than an artefact.
+The combined configuration reaches Rank-1 of $90.4\%$ and mAP of $93.5\%$, gains of
+$12.1$ and $8.6$ points. The interesting comparison is against the additive prediction.
+Summing the $\Delta$ column gives $+33.7$ points, predicting $78.3 + 33.7 = 112.0\%$
+Rank-1. The analogous mAP calculation predicts $105.6\%$. Both exceed the theoretical
+ceiling, so additivity is not merely unsupported empirically but arithmetically
+incoherent: only $21.7$ points of headroom exist while the sum demands $33.7$.
 
-The explanation is overlap. Several improvements address the same underlying
-limitation and therefore cannot be summed: $\eta_{\text{bb}}$, $E$, $W$, the
-larger backbone, and $\gamma$ all give the backbone more capacity or more
-opportunity to adapt to the turtle domain, while $\lambda_t = 0$,
-$p_{\text{drop}} = 0$, and $\lambda_w = 10^{-5}$ all relax regularisation on a
-model that was never overfitting. Consistently, raising $\eta_{\text{bb}}$ alone
-already recovers $+9.5$\,pp, i.e. about 78\% of the combined gain; the other
-eleven changes contribute $+2.6$\,pp between them.
+Realized gains are $36\%$ of predicted on Rank-1 and $42\%$ on mAP. The consistency of
+this ratio across two metrics indicates a systematic property rather than a metric
+artifact. Two overlap groups explain it. First, $\eta_{\text{bb}}$ ($+9.5$), $E$
+($+6.1$), $W$ ($+2.7$), ViT-L ($+2.1$), and $\gamma$ ($+1.2$) all address the same
+limitation, namely insufficient backbone adaptation to the turtle domain; once
+$\eta_{\text{bb}}$ is raised, the deficit that $E=100$ would fix is largely already
+resolved. Second, $\lambda_t$ ($+5.1$), $p_{\text{drop}}$ ($+2.7$), and $\lambda_w$
+($+0.8$) are all relaxations of regularization on a model that was never overfitting,
+so they harvest the same surplus. Several $\Delta$ values are below one point and
+plausibly noise.
 
-The methodological consequence is that OFAT usefully ranks parameters by
-importance and direction but cannot predict combined performance, and stacking
-all OFAT winners does not guarantee an optimum. One case is visible in our own
-selection: $\gamma = 0.65$ entered the combined configuration on Rank-1
-($+1.2$\,pp) despite reducing mAP and Rank-5 in its own ablation.
+Critically, $\eta_{\text{bb}}=10^{-4}$ alone accounts for $9.5$ of the $12.1$ point
+total, about $78\%$; the other eleven changes contribute $2.6$ points collectively.
+Backbone learning rate tuning is not merely the most influential parameter but very
+nearly the only one with substantial effect on this system.
 
-\subsection{Cross-Dataset Generalisation}
+The practical consequence is that concatenating OFAT optima does not guarantee an
+optimum and can import harmful changes. One is already visible: $\gamma = 0.65$ was
+selected on Rank-1 evidence ($+1.2$) despite reducing mAP by $0.2$ and Rank-5 by $2.1$
+points in its own OFAT run. Verification by factorial design, or minimally by backward
+ablation from the combined configuration, is required.
 
-The combined checkpoint (ViT-L/16 DINOv3) was applied to
-SeaTurtleID2022~\cite{adam2023} without retraining. Twenty-five identities were
-drawn at random as registered, with $N_G = 3$ gallery images each and 217
-queries. The inference protocol is identical to the in-distribution evaluation,
-so any difference is attributable to domain change alone.
+\subsection{Cross-Dataset Generalization}
 
-\begin{table}[htbp]
-  \caption{Cross-Dataset Retrieval on SeaTurtleID2022 (No Retraining)}
-  \label{tab:cross}
+We apply the combined-configuration checkpoint to SeaTurtleID2022 \cite{adam2023}
+without retraining. Twenty-five identities are drawn at random as registered, with
+$N_G=3$ gallery images each and the remainder as queries; images are head-cropped to
+match training preprocessing. Since the inference protocol is identical to the
+in-distribution evaluation, any degradation is attributable to domain shift alone.
+
+\begin{table}[t]
+  \caption{Cross-dataset retrieval on SeaTurtleID2022, no retraining, no rejection}
+  \label{tab:crossdata}
   \centering
-  \begin{tabular}{lcc}
+  \footnotesize
+  \begin{tabular}{@{}lc@{}}
     \toprule
-    \textbf{Metric} & \textbf{In-distribution} & \textbf{SeaTurtleID2022} \\
+    \textbf{Quantity}                 & \textbf{Value} \\
     \midrule
-    Rank-1 (\%)     & 90.4                     & 81.1                     \\
-    Rank-5 (\%)     & 96.6                     & 97.2                     \\
+    Registered identities             & 25             \\
+    Gallery images per identity $N_G$ & 3              \\
+    Queries                           & 217            \\
+    Rank-1                            & 81.1\%         \\
+    Rank-5                            & 97.2\%         \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Rank-1 falls by 9.3\,pp, so transfer is not free, but the degradation is far from
-catastrophic: Rank-5 slightly exceeds the in-distribution value, and Rank-1 still
-surpasses the baseline configuration on its own native domain (78.3\%). The
-fine-tuned DINOv3 embedding therefore generalises across capture conditions.
+Rank-1 of $81.1\%$ is $9.3$ points below the in-distribution combined result, so
+transfer carries a measurable cost, but it is not catastrophic. Rank-5 of $97.2\%$ in
+fact exceeds the in-distribution combined Rank-5 of $96.6\%$, and cross-dataset Rank-1
+still exceeds the in-distribution \emph{baseline}. The fine-tuned DINOv3 embedding does
+generalize across capture conditions. t-SNE projections show clusters that remain
+separable but are looser intra-class and closer inter-class than in-distribution,
+consistent with the observed drop.
 
-\subsection{Open-Set Identification with Rejection}
+\subsection{Open-Set Rejection}
 
-Field images may show unregistered animals. Adding five identities absent from
-the gallery brings the query set to 266 (217 registered, 49 unregistered). We
-compare two structurally different rejection rules. The \emph{global threshold}
-is absolute: the top-1 cosine score is compared against a single tuned value
-(maximising Youden's $J$). The \emph{background class} is relative: prototypes of
-turtles outside the gallery are retained as multiple vectors, and a query is
-accepted when $s = s_{\text{reg}} - s_{\text{bg}} \geq \text{margin}$, where
-$s_{\text{bg}}$ is the maximum similarity to any background prototype. Because
-$s_{\text{bg}}$ is recomputed per query, the rule normalises hub identities.
-Background prototypes come from a disjoint image source, so both schemes are
-evaluated on the identical 266-query set.
+Field deployment must handle photographs of animals never enrolled. Adding five
+unregistered identities brings the query set to 266, comprising 217 registered and 49
+unregistered. We compare two rejection rules on the identical query set.
 
-\begin{table}[htbp]
-  \caption{Identification with Rejection on SeaTurtleID2022}
-  \label{tab:reject}
+\textbf{Global threshold (absolute).} The top-1 cosine score is compared against a
+single threshold tuned by maximizing Youden's $J$.
+
+\textbf{Background class (relative).} A set of background prototypes drawn from turtle
+images outside the gallery, kept as multiple prototypes rather than pooled, yields a
+relative score $s = s_{\text{reg}} - s_{\text{bg}}$, where $s_{\text{bg}}$ is the maximum
+similarity to any background prototype. A query is accepted if $s \geq \text{margin}$,
+with the margin tuned under a bounded false-reject constraint. Recomputing
+$s_{\text{bg}}$ per query is intended to normalize out hub identities.
+
+\begin{table}[t]
+  \caption{Open-set identification on SeaTurtleID2022 (217 registered, 49 unregistered
+    queries)}
+  \label{tab:openset}
   \centering
-  \small
-  \begin{tabular}{lcc}
+  \footnotesize
+  \begin{tabular}{@{}lcc@{}}
     \toprule
-    \textbf{Metric}              & \textbf{Global threshold} & \textbf{Background class} \\
+    \textbf{Quantity}       & \textbf{Global thr.} & \textbf{Background} \\
     \midrule
-    Decision rule                & absolute                  & relative                  \\
-    Identification accuracy (\%) & 63.5                      & 64.3                      \\
-    Registered Rank-1 (\%)       & 55.3                      & 56.7                      \\
-    False-reject rate (\%)       & 43.4                      & 41.9                      \\
-    Unregistered recall (\%)     & 100.0                     & 98.0                      \\
-    False-accept rate (\%)       & 0.0                       & 2.0                       \\
+    Decision parameter      & $0.9122$             & $+0.0148$           \\
+    Identification accuracy & 63.5\%               & 64.3\%              \\
+    Registered Rank-1       & 55.3\%               & 56.7\%              \\
+    False-reject rate       & 43.4\%               & 41.9\%              \\
+    Unregistered recall     & 100.0\%              & 98.0\%              \\
+    False-accept rate       & 0.0\%                & 2.0\%               \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Registered Rank-1 collapses from 81.1\% to 55.3\% and 56.7\%. The ranking model is
-unchanged between Table~\ref{tab:cross} and Table~\ref{tab:reject}; only a
-rejection stage placed before ranking has been added, and it discards over 40\% of
-valid registered queries.
+Registered Rank-1 falls from $81.1\%$ without rejection to $55.3\%$ and $56.7\%$
+respectively. The ranking model is unchanged between these settings; only a rejection
+stage placed before ranking has been added. The source is the false-reject rate of
+roughly $42\%$: nearly half of genuinely enrolled queries are discarded before they can
+be ranked.
 
-The decisive observation is that both rules land on nearly the same operating
-point --- every difference is on the order of one or two queries --- despite being
-mechanically unrelated. The cause is visible in the score distributions. All
-top-1 scores, registered and unregistered alike, are confined to a narrow band of
-roughly $0.85$--$0.98$: because every image shares near-identical structure (a
-turtle head against an underwater background), embeddings occupy a narrow cone of
-the hypersphere and any two images are already similar before identity is
-considered. The unregistered distribution is not merely shifted but embedded
-inside the lower tail of the registered distribution, so any threshold high enough
-to exclude all unregistered queries necessarily removes a large share of
-registered ones. Separability is only moderate, with ROC-AUC of $0.77$--$0.79$,
-which bounds every possible decision rule. For the relative scheme, the two
-classes overlap almost completely along the $s_{\text{bg}}$ axis, so
-$s_{\text{bg}}$ carries no discriminative information and
-$s = s_{\text{reg}} - s_{\text{bg}}$ is effectively $s_{\text{reg}}$ plus noise.
+The important observation is not which rule wins but how little separates them. Despite
+mechanistically opposite designs, absolute versus relative, they converge on nearly the
+same operating point, with all differences on the order of one or two queries. Among
+accepted registered queries, retrieval accuracy is $0.567/(1-0.419) \approx 97.6\%$ for
+the background scheme and $\approx 97.7\%$ for the threshold, confirming that both
+rules simply discard the hard cases first.
 
-Qualitative inspection confirms that the representation is not at fault. Among the
-five most confident errors, all are registered queries wrongly rejected --- none is a
-false accept --- and in every case the correct identity remains within the top five,
-at rank 1 for three of them (scores $0.853$, $0.867$, $0.868$). Retrieval had
-already placed the right answer first; the rejection stage discarded it. Among
-accepted registered queries, retrieval accuracy is $0.567/(1-0.419) \approx 97.6\%$
-for the background class and $\approx 97.7\%$ for the threshold, i.e. both rules are
-simply strict enough to filter the hard cases out in advance.
+The cause lies in the score distribution. Every top-1 similarity, registered or not,
+falls in a narrow band of approximately $0.85$ to $0.98$. An image of a turtle absent
+from the gallery still scores about $0.90$ against some other individual's prototype,
+because all images share nearly identical structure, a turtle head against an underwater
+background, placing embeddings in a tight cone on the hypersphere where any two images
+are already similar before identity is considered. The unregistered distribution is not
+merely shifted but embedded within the lower tail of the registered distribution, so any
+threshold high enough to reject all unregistered queries necessarily rejects most
+registered ones. The $43.4\%$ false-reject rate is a direct consequence of this
+geometry, not of poor threshold tuning; the Youden optimum is a corner solution chosen
+because no better compromise exists.
 
-% Figure placeholders: export Fig. 4.6 (score distribution) and Fig. 4.7
-% (background-class decision space) from the thesis and uncomment.
-%
-% \begin{figure}[htbp]
-% \centerline{\includegraphics[width=\columnwidth]{score_distribution.png}}
-% \caption{Top-1 cosine similarity for registered ($n=217$) and unregistered
-% ($n=49$) queries on SeaTurtleID2022. The dashed line marks the auto-tuned
-% rejection threshold.}
-% \label{fig:scores}
-% \end{figure}
+For the background scheme, plotting $s_{\text{reg}}$ against $s_{\text{bg}}$ shows the
+two classes separating along the horizontal axis only. On the vertical axis they overlap
+almost completely, and $s_{\text{bg}}$ shows no strong dependence on $s_{\text{reg}}$.
+The relative score is therefore effectively $s_{\text{reg}}$ plus noise, which is why it
+reaches the same operating point. Overall separability is only moderate, with ROC-AUC of
+$0.77$ to $0.79$, and this bounds every possible decision rule over these scores.
 
-\subsection{Comparison with Prior Work}
+Qualitative inspection is decisive. In the five most confidently wrong decisions, all
+five are registered identities rejected as unknown, none are false accepts, and in every
+case the correct identity remains within the top five candidates, at rank one for three
+of them with scores of $0.853$, $0.867$, and $0.868$. Meanwhile a correctly rejected
+unregistered query scores $0.851$. A correct match and a completely unknown animal
+produce practically indistinguishable scores. Correct confident decisions, by contrast,
+score $0.966$ to $0.976$ with a clear gap to the runner-up. The system decides reliably
+only when a similarly-posed gallery image pushes the score above roughly $0.95$;
+otherwise everything concentrates in the same $0.84$ to $0.88$ band.
 
-\begin{table}[htbp]
-  \caption{Context Against Prior Work (Not Directly Comparable)}
-  \label{tab:comparison}
-  \centering
-  \small
-  \begin{tabular}{llcc}
-    \toprule
-    \textbf{Method}             & \textbf{Dataset} & \textbf{Protocol} & \textbf{R@1 (\%)} \\
-    \midrule
-    ResNet-50~\cite{nguyen2023} & 20 identities    & closed-set        & 95.3              \\
-    Adam et al.~\cite{adam2023} & SeaTurtleID2022  & open-set          & 86.8              \\
-    Ours (combined)             & SeaTurtleIDHeads & open-set          & 90.4              \\
-    Ours (transfer)             & SeaTurtleID2022  & open-set          & 81.1              \\
-    Ours (w/ rejection)         & SeaTurtleID2022  & open-set          & 55.3              \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-Table~\ref{tab:comparison} is contextual only: the datasets, identity counts, and
-protocols differ, and the closed-set 95.3\% of~\cite{nguyen2023} on 20 identities
-is not commensurable with open-set evaluation on held-out identities. The
-comparison's value lies in its last three rows, which show the same model losing
-9.3\,pp to domain transfer and a further 25.8\,pp to the requirement of rejecting
-unknowns --- a cost that closed-set reporting renders invisible.
+We caution that the $100\%$ unregistered recall is obtained from only 49 unregistered
+queries with a threshold tuned on the same set, and must not be read as a guarantee of
+perfect rejection on new data.
 
 % -------------------------------------------------------
-\section{Discussion and Limitations}
+\section{Discussion}
 \label{sec:disc}
 % -------------------------------------------------------
 
-Our results separate two failure sources that are usually conflated. The
-embedding generalises: it survives a change of dataset with a measured and
-moderate loss, and it keeps the correct identity at rank 1 even in the cases the
-system reports most confidently and wrongly. What fails is the mapping from
-similarity scores to a registered/unregistered decision. This suggests that
-future work on wildlife Re-ID deployment should target score calibration and
-domain-specific score normalisation rather than further retrieval accuracy: an
-extra point of Rank-1 is worth little when 42\% of valid queries are rejected
-before ranking.
+Three implications follow.
 
-Several limitations bound these conclusions. All results come from a single seed,
-so parameters whose Rank-1 range is below 2\,pp cannot be distinguished from
-random fluctuation; multi-seed means and standard deviations are required. The
-OFAT baseline sits in an under-trained regime ($E = 100$ still improves over
-$E = 50$), so other parameters were assessed at a non-converged operating point.
-The rejection threshold was tuned on the same set it was evaluated on and only 49
-unregistered queries were available, so the reported 100\% unregistered recall
-should not be read as a guarantee on new data. Finally, head detection and
-segmentation are assumed rather than integrated.
+\textbf{Tune the backbone learning rate first.} For ViT-based animal Re-ID, the standard
+conservative fine-tuning rate of $10^{-5}$ substantially under-adapts a self-supervised
+backbone to a fine-grained wildlife domain. Practitioners with a limited compute budget
+should sweep $\eta_{\text{bb}}$ before touching loss hyperparameters, whose combined
+effect here is an order of magnitude smaller.
 
-% -------------------------------------------------------
+\textbf{Reconsider the ArcFace-plus-triplet default.} The combination is near-universal
+in Re-ID, but at a few hundred training identities the triplet term monotonically
+degraded performance. Its benefit likely requires either more identities or a backbone
+that has not already been pretrained toward strong local discrimination.
+
+\textbf{Open-set rejection is the deployment bottleneck.} The representation transfers;
+the decision rule does not. Because failure is in score calibration rather than
+embedding quality, the productive directions are calibration and score normalization,
+for instance distance normalization against a cohort, learned rejection heads, or
+explicit training-time exposure to unenrolled individuals, rather than further backbone
+scaling. Rejection thresholds must additionally be tuned on a held-out set, which our
+protocol did not do.
+
+The main methodological limitation is single-seed evaluation. Parameters with ranges
+below two points cannot be separated from run-to-run variance, and the exact match
+between two configurations across three metrics observed for $\gamma=0.85$ warrants
+verification against experiment logs. OFAT also evaluates each parameter at an operating
+point that Table~\ref{tab:sensitivity} shows to be under-trained, so some measured
+effects are conditioned on a non-converged reference.
+
 \section{Conclusion}
-% -------------------------------------------------------
 
-We presented a sea turtle Re-ID system built on a DINOv3-pretrained Vision
-Transformer, trained under an open-set identity split on SeaTurtleIDHeads. A
-convention-derived baseline reaches 78.3\% Rank-1 and 84.9\% mAP, and a tuned
-configuration reaches 90.4\% and 93.5\%. A sensitivity study over 19 parameters
-shows that the backbone learning rate dominates, contributing roughly 78\% of the
-total gain, that ArcFace alone outperforms the conventional ArcFace-plus-triplet
-combination at this data scale, and that OFAT gains are strongly sub-additive and
-must not be summed. The model transfers to SeaTurtleID2022 without retraining at
-81.1\% Rank-1. Under rejection of unregistered individuals, however, Registered
-Rank-1 falls to 55.3--56.7\% at a false-reject rate near 42\%, and two
-structurally different decision rules converge on the same operating point because
-top-1 scores of registered and unregistered queries are only moderately separable
-(ROC-AUC $0.77$--$0.79$). The bottleneck for field deployment is score
-calibration, not representation quality. Future work should pursue multi-seed
-evaluation, threshold tuning on a held-out validation set with a larger
-unregistered population, exploitation of left-right profile
-similarity~\cite{papafitsoros2025}, and integration of head detection into an
-end-to-end pipeline.
+We presented a DINOv3 ViT sea turtle Re-ID system evaluated under open-set identity
+splits, together with a sensitivity map over nineteen parameters. A convention-based
+baseline reaches Rank-1 of $78.3\%$ and mAP of $84.9\%$; combining individually-best
+settings reaches $90.4\%$ and $93.5\%$, with $k$-reciprocal re-ranking contributing
+about one point in both cases. Backbone learning rate is the dominant factor,
+contributing roughly $78\%$ of the total improvement on its own, while six parameters
+move Rank-1 by under two points. Parameter effects are strongly sub-additive: only
+$36\%$ of the additively predicted gain materializes, and the additive prediction
+exceeds $100\%$, so OFAT should be used to order parameters by importance, never to
+forecast combined performance.
+
+The embedding transfers to an unseen capture domain at Rank-1 of $81.1\%$ and Rank-5 of
+$97.2\%$ without retraining. Open-set rejection, however, reduces effective accuracy to
+$55$--$57\%$ at a false-reject rate near $42\%$, and two structurally different rejection
+rules converge on nearly identical operating points because top-1 similarities occupy a
+narrow band with ROC-AUC of only $0.77$--$0.79$. Since correct identities remain in the
+top five even in the worst failures, the limitation is calibration, not representation.
+Future work should pursue multi-seed evaluation with factorial verification, held-out
+threshold tuning with more unenrolled identities, exploitation of left-right profile
+similarity, integration of head detection into an end-to-end pipeline, and validation on
+species beyond loggerhead.
 
 \begin{thebibliography}{00}
 
-  \bibitem{ario2016}
-  R. Ario, E. Wibowo, I. Pratikto, and S. Fajar, ``Pelestarian habitat penyu dari ancaman kepunahan di Turtle Conservation and Education Center (TCEC), Bali,'' \textit{Jurnal Kelautan Tropis}, vol. 19, no. 1, 2016.
-
-  \bibitem{nur2022}
-  M. Nur, T. Tenriware, D. Lestari, C. R. Mahfud, and T. Tikawati, ``Pelatihan konservasi penyu sebagai biota perairan yang dilindungi di Pantai Barane, Kabupaten Majene, Provinsi Sulawesi Barat,'' \textit{SELAPARANG: Jurnal Pengabdian Masyarakat Berkemajuan}, vol. 6, no. 4, pp. 1741--1746, 2022.
-
   \bibitem{hays2018}
-  G. C. Hays and L. A. Hawkes, ``Satellite tracking sea turtles: Opportunities and challenges to address key questions,'' \textit{Frontiers in Marine Science}, vol. 5, 2018.
-
-  \bibitem{zheng2016}
-  L. Zheng, Y. Yang, and A. G. Hauptmann, ``Person re-identification: Past, present and future,'' \textit{arXiv preprint arXiv:1610.02984}, 2016.
+  G. C. Hays and L. A. Hawkes, ``Satellite tracking sea turtles: opportunities and
+  challenges to address key questions,'' \emph{Front. Mar. Sci.}, vol. 5, 2018.
 
   \bibitem{carpentier2016}
-  A.-S. Carpentier, C. Jean, M. Barret, A. Chassagneux, and S. Ciccione, ``Stability of facial scale patterns on green sea turtles \textit{Chelonia mydas} over time: A validation for the use of a photo-identification method,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 476, pp. 15--21, 2016.
-
-  \bibitem{carter2014}
-  S. J. B. Carter, I. P. Bell, J. J. Miller, and P. P. Gash, ``Automated marine turtle photograph identification using artificial neural networks, with application to green turtles,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 452, pp. 105--110, 2014.
+  A.-S. Carpentier, C. Jean, M. Barret, A. Chassagneux, and S. Ciccione, ``Stability of
+  facial scale patterns on green sea turtles \emph{Chelonia mydas} over time: a validation
+  for the use of a photo-identification method,'' \emph{J. Exp. Mar. Biol. Ecol.},
+  vol. 476, pp. 15--21, 2016.
 
   \bibitem{gatto2018}
-  C. R. Gatto, A. Rotger, N. J. Robinson, and P. S. Tomillo, ``A novel method for photo-identification of sea turtles using scale patterns on the front flippers,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 504, pp. 108--114, 2018.
+  C. R. Gatto, A. Rotger, N. J. Robinson, and P. Santidri\'{a}n Tomillo, ``A novel method
+  for photo-identification of sea turtles using scale patterns on the front flippers,''
+  \emph{J. Exp. Mar. Biol. Ecol.}, vol. 504, pp. 108--114, 2018.
 
   \bibitem{dunbar2023}
-  S. G. Dunbar et al., ``Photo identification for sea turtles: Flipper scales more accurate than head scales using APHIS,'' \textit{Journal of Experimental Marine Biology and Ecology}, vol. 566, p. 151923, 2023.
-
-  \bibitem{adam2023}
-  L. Adam, K. Papafitsoros, J. Pu\v{s}man, and V. \v{C}erm\'ak, ``SeaTurtleID2022: A long-span dataset for reliable sea turtle re-identification,'' \textit{arXiv preprint arXiv:2211.10307}, 2023.
+  S. G. Dunbar \emph{et al.}, ``Photo identification for sea turtles: flipper scales more
+  accurate than head scales using APHIS,'' \emph{J. Exp. Mar. Biol. Ecol.}, vol. 566,
+  art. 151923, 2023.
 
   \bibitem{nguyen2023}
-  T. T. T. Nguyen et al., ``Comparison of convolutional neural network architectures for sea turtle individual's recognition,'' in \textit{Proc. Int. Conf. Frontiers of Artificial Intelligence and Machine Learning (FAIM)}, 2023.
+  T. T. T. Nguyen \emph{et al.}, ``Comparison of convolutional neural network architectures
+  for sea turtle individual's recognition,'' in \emph{Proc. Int. Conf. Frontiers of
+    Artificial Intelligence and Machine Learning}, 2023.
 
   \bibitem{cermak2024}
-  V. \v{C}erm\'ak, L. Picek, L. Adam, and K. Papafitsoros, ``WildlifeDatasets: An open-source toolkit for animal re-identification,'' in \textit{Proc. IEEE/CVF Winter Conf. Applications of Computer Vision (WACV)}, pp. 5953--5963, 2024.
-
-  \bibitem{papafitsoros2025}
-  K. Papafitsoros et al., ``Exploiting facial side similarities to improve AI-driven sea turtle photo-identification systems,'' \textit{Ecological Informatics}, 2025.
-
-  \bibitem{dosovitskiy2021}
-  A. Dosovitskiy et al., ``An image is worth 16x16 words: Transformers for image recognition at scale,'' in \textit{Proc. Int. Conf. Learning Representations (ICLR)}, 2021.
-
-  \bibitem{simeoni2025}
-  O. Sim\'eoni et al., ``DINOv3,'' \textit{arXiv preprint arXiv:2508.10104}, 2025.
-
-  \bibitem{oquab2024}
-  M. Oquab et al., ``DINOv2: Learning robust visual features without supervision,'' \textit{Transactions on Machine Learning Research}, 2024.
-
-  \bibitem{caron2021}
-  M. Caron et al., ``Emerging properties in self-supervised vision transformers,'' in \textit{Proc. IEEE/CVF Int. Conf. Computer Vision (ICCV)}, 2021.
-
-  \bibitem{deng2019}
-  J. Deng, J. Guo, N. Xue, and S. Zafeiriou, ``ArcFace: Additive angular margin loss for deep face recognition,'' in \textit{Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)}, pp. 4690--4699, 2019.
-
-  \bibitem{hermans2017}
-  A. Hermans, L. Beyer, and B. Leibe, ``In defense of the triplet loss for person re-identification,'' \textit{arXiv preprint arXiv:1703.07737}, 2017.
-
-  \bibitem{schroff2015}
-  F. Schroff, D. Kalenichenko, and J. Philbin, ``FaceNet: A unified embedding for face recognition and clustering,'' in \textit{Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)}, pp. 815--823, 2015.
-
-  \bibitem{zhong2017}
-  Z. Zhong, L. Zheng, D. Cao, and S. Li, ``Re-ranking person re-identification with k-reciprocal encoding,'' in \textit{Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR)}, pp. 3652--3661, 2017.
+  V. \v{C}erm\'{a}k, L. Picek, L. Adam, and K. Papafitsoros, ``WildlifeDatasets: an
+  open-source toolkit for animal re-identification,'' in \emph{Proc. IEEE/CVF Winter Conf.
+    Appl. Comput. Vis. (WACV)}, 2024, pp. 5953--5963.
 
   \bibitem{zheng2015}
-  L. Zheng et al., ``Scalable person re-identification: A benchmark,'' in \textit{Proc. IEEE/CVF Int. Conf. Computer Vision (ICCV)}, pp. 1116--1124, 2015.
+  L. Zheng, L. Shen, L. Tian, S. Wang, J. Wang, and Q. Tian, ``Scalable person
+  re-identification: a benchmark,'' in \emph{Proc. IEEE Int. Conf. Comput. Vis. (ICCV)},
+  2015, pp. 1116--1124.
+
+  \bibitem{carter2014}
+  S. J. B. Carter, I. P. Bell, J. J. Miller, and P. P. Gash, ``Automated marine turtle
+  photograph identification using artificial neural networks, with application to green
+  turtles,'' \emph{J. Exp. Mar. Biol. Ecol.}, vol. 452, pp. 105--110, 2014.
+
+  \bibitem{adam2023}
+  L. Adam, K. Papafitsoros, J. Pu\v{s}man, and V. \v{C}erm\'{a}k, ``SeaTurtleID2022: a
+  long-span dataset for reliable sea turtle re-identification,'' \emph{arXiv preprint
+    arXiv:2211.10307}, 2023.
+
+  \bibitem{papafitsoros2025}
+  K. Papafitsoros \emph{et al.}, ``Exploiting facial side similarities to improve AI-driven
+  sea turtle photo-identification systems,'' \emph{Ecological Informatics}, 2025.
+
+  \bibitem{dosovitskiy2021}
+  A. Dosovitskiy \emph{et al.}, ``An image is worth 16x16 words: transformers for image
+  recognition at scale,'' in \emph{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2021.
+
+  \bibitem{caron2021}
+  M. Caron \emph{et al.}, ``Emerging properties in self-supervised vision transformers,''
+  in \emph{Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV)}, 2021.
+
+  \bibitem{oquab2024}
+  M. Oquab \emph{et al.}, ``DINOv2: learning robust visual features without supervision,''
+  \emph{Trans. Mach. Learn. Res.}, 2024.
+
+  \bibitem{simeoni2025}
+  O. Sim\'{e}oni \emph{et al.}, ``DINOv3,'' \emph{arXiv preprint arXiv:2508.10104}, 2025.
+
+  \bibitem{deng2019}
+  J. Deng, J. Guo, N. Xue, and S. Zafeiriou, ``ArcFace: additive angular margin loss for
+  deep face recognition,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.
+    (CVPR)}, 2019, pp. 4690--4699.
+
+  \bibitem{schroff2015}
+  F. Schroff, D. Kalenichenko, and J. Philbin, ``FaceNet: a unified embedding for face
+  recognition and clustering,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern
+    Recognit. (CVPR)}, 2015, pp. 815--823.
+
+  \bibitem{hermans2017}
+  A. Hermans, L. Beyer, and B. Leibe, ``In defense of the triplet loss for person
+  re-identification,'' \emph{arXiv preprint arXiv:1703.07737}, 2017.
+
+  \bibitem{zhong2017}
+  Z. Zhong, L. Zheng, D. Cao, and S. Li, ``Re-ranking person re-identification with
+  $k$-reciprocal encoding,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.
+    (CVPR)}, 2017, pp. 3652--3661.
 
   \bibitem{loshchilov2019}
-  I. Loshchilov and F. Hutter, ``Decoupled weight decay regularization,'' in \textit{Proc. Int. Conf. Learning Representations (ICLR)}, 2019.
+  I. Loshchilov and F. Hutter, ``Decoupled weight decay regularization,'' in \emph{Proc.
+    Int. Conf. Learn. Represent. (ICLR)}, 2019.
 
   \bibitem{sun2019}
-  C. Sun, X. Qiu, Y. Xu, and X. Huang, ``How to fine-tune BERT for text classification?'' in \textit{Proc. Chinese Computational Linguistics (CCL)}, pp. 194--206, 2019.
+  C. Sun, X. Qiu, Y. Xu, and X. Huang, ``How to fine-tune BERT for text classification?''
+  in \emph{Chinese Computational Linguistics (CCL)}, 2019, pp. 194--206.
 
-  \bibitem{loshchilov2017}
-  I. Loshchilov and F. Hutter, ``SGDR: Stochastic gradient descent with warm restarts,'' in \textit{Proc. Int. Conf. Learning Representations (ICLR)}, 2017.
+  \bibitem{schneider2020}
+  S. Schneider, G. W. Taylor, and S. C. Kremer, ``Deep learning methods for multi-species
+  animal re-identification and tracking --- a survey,'' \emph{Comput. Sci. Rev.}, vol. 38,
+  art. 100310, 2020.
 
-  \bibitem{wildlifedatasets2023}
-  WildlifeDatasets, ``SeaTurtleIDHeads,'' Kaggle, 2023. [Online]. Available: \url{https://www.kaggle.com/datasets/wildlifedatasets/seaturtleidheads}
+  \bibitem{stidheads}
+  WildlifeDatasets, ``SeaTurtleIDHeads.'' [Online]. Available:
+  \url{https://www.kaggle.com/datasets/wildlifedatasets/seaturtleidheads}
 
 \end{thebibliography}
+
 \end{document}
